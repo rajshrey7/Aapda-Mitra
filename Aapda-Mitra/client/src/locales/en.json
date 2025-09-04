@@ -1,0 +1,78 @@
+{
+  "app_name": "Aapda Mitra",
+  "tagline": "Your Disaster Preparedness Companion",
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "quizzes": "Quizzes",
+    "drills": "Drills",
+    "leaderboard": "Leaderboard",
+    "emergency": "Emergency",
+    "profile": "Profile",
+    "admin": "Admin",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "home": {
+    "welcome": "Welcome to Aapda Mitra",
+    "subtitle": "Empowering Schools with Disaster Preparedness",
+    "start_learning": "Start Learning",
+    "take_quiz": "Take a Quiz",
+    "practice_drills": "Practice Drills",
+    "view_leaderboard": "View Leaderboard"
+  },
+  "quiz": {
+    "title": "Disaster Preparedness Quizzes",
+    "select_category": "Select Category",
+    "start": "Start Quiz",
+    "submit": "Submit Answer",
+    "next": "Next Question",
+    "finish": "Finish Quiz",
+    "score": "Your Score",
+    "correct": "Correct Answers",
+    "percentage": "Percentage",
+    "time_taken": "Time Taken"
+  },
+  "drill": {
+    "earthquake": "Earthquake Drill",
+    "fire": "Fire Drill",
+    "flood": "Flood Response",
+    "start_simulation": "Start Simulation",
+    "follow_instructions": "Follow the instructions carefully"
+  },
+  "emergency": {
+    "title": "Emergency Contacts",
+    "police": "Police",
+    "fire": "Fire Department",
+    "ambulance": "Ambulance",
+    "disaster_helpline": "Disaster Helpline"
+  },
+  "profile": {
+    "my_profile": "My Profile",
+    "badges": "Badges Earned",
+    "points": "Total Points",
+    "level": "Current Level",
+    "quizzes_completed": "Quizzes Completed",
+    "drills_completed": "Drills Completed"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "users": "Manage Users",
+    "quizzes": "Manage Quizzes",
+    "reports": "View Reports",
+    "announcements": "Send Announcements"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success!",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter"
+  }
+}

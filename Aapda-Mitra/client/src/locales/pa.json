@@ -1,0 +1,78 @@
+{
+  "app_name": "ਆਪਦਾ ਮਿੱਤਰ",
+  "tagline": "ਤੁਹਾਡਾ ਆਪਦਾ ਤਿਆਰੀ ਸਾਥੀ",
+  "nav": {
+    "home": "ਹੋਮ",
+    "about": "ਬਾਰੇ",
+    "quizzes": "ਕੁਇਜ਼",
+    "drills": "ਅਭਿਆਸ",
+    "leaderboard": "ਲੀਡਰਬੋਰਡ",
+    "emergency": "ਐਮਰਜੈਂਸੀ",
+    "profile": "ਪ੍ਰੋਫਾਈਲ",
+    "admin": "ਐਡਮਿਨ",
+    "login": "ਲੌਗਇਨ",
+    "register": "ਰਜਿਸਟਰ",
+    "logout": "ਲੌਗਆਊਟ"
+  },
+  "home": {
+    "welcome": "ਆਪਦਾ ਮਿੱਤਰ ਵਿੱਚ ਤੁਹਾਡਾ ਸੁਆਗਤ ਹੈ",
+    "subtitle": "ਸਕੂਲਾਂ ਨੂੰ ਆਪਦਾ ਤਿਆਰੀ ਨਾਲ ਸ਼ਕਤੀਸ਼ਾਲੀ ਬਣਾਉਣਾ",
+    "start_learning": "ਸਿੱਖਣਾ ਸ਼ੁਰੂ ਕਰੋ",
+    "take_quiz": "ਕੁਇਜ਼ ਲਓ",
+    "practice_drills": "ਅਭਿਆਸ ਕਰੋ",
+    "view_leaderboard": "ਲੀਡਰਬੋਰਡ ਦੇਖੋ"
+  },
+  "quiz": {
+    "title": "ਆਪਦਾ ਤਿਆਰੀ ਕੁਇਜ਼",
+    "select_category": "ਸ਼੍ਰੇਣੀ ਚੁਣੋ",
+    "start": "ਕੁਇਜ਼ ਸ਼ੁਰੂ ਕਰੋ",
+    "submit": "ਜਵਾਬ ਜਮ੍ਹਾ ਕਰੋ",
+    "next": "ਅਗਲਾ ਸਵਾਲ",
+    "finish": "ਕੁਇਜ਼ ਖਤਮ ਕਰੋ",
+    "score": "ਤੁਹਾਡਾ ਸਕੋਰ",
+    "correct": "ਸਹੀ ਜਵਾਬ",
+    "percentage": "ਪ੍ਰਤੀਸ਼ਤ",
+    "time_taken": "ਲਿਆ ਗਿਆ ਸਮਾਂ"
+  },
+  "drill": {
+    "earthquake": "ਭੂਚਾਲ ਅਭਿਆਸ",
+    "fire": "ਅੱਗ ਅਭਿਆਸ",
+    "flood": "ਹੜ੍ਹ ਪ੍ਰਤੀਕਿਰਿਆ",
+    "start_simulation": "ਸਿਮੂਲੇਸ਼ਨ ਸ਼ੁਰੂ ਕਰੋ",
+    "follow_instructions": "ਨਿਰਦੇਸ਼ਾਂ ਦਾ ਧਿਆਨ ਨਾਲ ਪਾਲਣ ਕਰੋ"
+  },
+  "emergency": {
+    "title": "ਐਮਰਜੈਂਸੀ ਸੰਪਰਕ",
+    "police": "ਪੁਲਿਸ",
+    "fire": "ਅੱਗ ਬੁਝਾਊ ਵਿਭਾਗ",
+    "ambulance": "ਐਂਬੂਲੈਂਸ",
+    "disaster_helpline": "ਆਪਦਾ ਹੈਲਪਲਾਈਨ"
+  },
+  "profile": {
+    "my_profile": "ਮੇਰੀ ਪ੍ਰੋਫਾਈਲ",
+    "badges": "ਕਮਾਏ ਬੈਜ",
+    "points": "ਕੁੱਲ ਅੰਕ",
+    "level": "ਮੌਜੂਦਾ ਪੱਧਰ",
+    "quizzes_completed": "ਪੂਰੇ ਕੀਤੇ ਕੁਇਜ਼",
+    "drills_completed": "ਪੂਰੇ ਕੀਤੇ ਅਭਿਆਸ"
+  },
+  "admin": {
+    "dashboard": "ਐਡਮਿਨ ਡੈਸ਼ਬੋਰਡ",
+    "users": "ਯੂਜ਼ਰ ਪ੍ਰਬੰਧਨ",
+    "quizzes": "ਕੁਇਜ਼ ਪ੍ਰਬੰਧਨ",
+    "reports": "ਰਿਪੋਰਟਾਂ ਦੇਖੋ",
+    "announcements": "ਘੋਸ਼ਣਾਵਾਂ ਭੇਜੋ"
+  },
+  "common": {
+    "loading": "ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...",
+    "error": "ਕੋਈ ਤਰੁੱਟੀ ਆਈ",
+    "success": "ਸਫਲਤਾ!",
+    "save": "ਸੇਵ ਕਰੋ",
+    "cancel": "ਰੱਦ ਕਰੋ",
+    "delete": "ਮਿਟਾਓ",
+    "edit": "ਸੰਪਾਦਿਤ ਕਰੋ",
+    "view": "ਦੇਖੋ",
+    "search": "ਖੋਜੋ",
+    "filter": "ਫਿਲਟਰ"
+  }
+}

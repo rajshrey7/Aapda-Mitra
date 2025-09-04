@@ -1,0 +1,27 @@
+{
+  "name": "aapda-mitra-server",
+  "version": "1.0.0",
+  "description": "Backend server for Aapda Mitra - Disaster Preparedness Platform",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": ["disaster", "preparedness", "education", "SIH"],
+  "author": "Team Aapda Mitra",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.6.3",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "express-validator": "^7.0.1",
+    "axios": "^1.5.1",
+    "openai": "^4.20.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
