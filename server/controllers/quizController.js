@@ -1,12 +1,11 @@
 const Quiz = require('../models/Quiz');
 const Score = require('../models/Score');
 const User = require('../models/User');
-const OpenAI = require('openai');
+// 1. Import the Google Generative AI package
+const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-development'
-});
+// 2. Initialize the Gemini client with your API key
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy-key-for-development');
 
 // @desc    Get all quizzes
 // @route   GET /api/quiz
@@ -229,19 +228,20 @@ const submitQuiz = async (req, res) => {
 // @access  Private
 const generateAIQuiz = async (req, res) => {
   try {
-    const { topic, difficulty, numberOfQuestions, language, userLevel } = req.body;
+    const { topic, difficulty, numberOfQuestions, language } = req.body;
     
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
-      // Return sample quiz if no API key
+    // 3. Update environment variable check
+    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'dummy-key-for-development') {
+      // Return sample quiz if no API key (logic remains the same)
       const sampleQuiz = {
         title: `AI Generated Quiz: ${topic}`,
         description: `Practice quiz on ${topic} for disaster preparedness`,
-        category: 'general',
+        category: topic.toLowerCase() || 'general',
         difficulty: difficulty || 'beginner',
         isAIGenerated: true,
         questions: [
           {
-            question: `What is the first thing to do during a ${topic}?`,
+            question: `What is the first thing to do during an ${topic}?`,
             questionType: 'multiple-choice',
             options: [
               { text: 'Run outside immediately', isCorrect: false },
@@ -251,8 +251,7 @@ const generateAIQuiz = async (req, res) => {
             ],
             correctAnswer: 'Take cover under a sturdy desk',
             explanation: 'Taking cover under a sturdy desk or table protects you from falling objects.',
-            points: 10,
-            difficulty: 'easy'
+            points: 10
           },
           {
             question: `Emergency supplies should include water for how many days?`,
@@ -265,8 +264,7 @@ const generateAIQuiz = async (req, res) => {
             ],
             correctAnswer: '3 days',
             explanation: 'Emergency kits should have at least 3 days of water supply per person.',
-            points: 10,
-            difficulty: 'easy'
+            points: 10
           }
         ]
       };
@@ -276,53 +274,106 @@ const generateAIQuiz = async (req, res) => {
       return res.json({
         status: 'success',
         data: createdQuiz,
-        message: 'Sample quiz generated (OpenAI API key not configured)'
+        message: 'Sample quiz generated (Gemini API key not configured)'
       });
     }
 
-    // Generate quiz using OpenAI
-    const prompt = `Generate ${numberOfQuestions || 5} quiz questions about ${topic} disaster preparedness at ${difficulty || 'beginner'} difficulty level. 
-    Focus on practical knowledge for students in Punjab, India.
-    Return as JSON with this structure:
-    {
-      "questions": [
-        {
-          "question": "question text",
-          "options": ["option1", "option2", "option3", "option4"],
-          "correctIndex": 0,
-          "explanation": "why this answer is correct"
-        }
-      ]
-    }`;
+    // 4. Get the Gemini model
+    // Using gemini-1.5-flash-latest is efficient for this task
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
-    const completion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "gpt-3.5-turbo",
-      temperature: 0.7,
-      max_tokens: 1000
+    // 5. Define the JSON schema for reliable, structured output
+    const schema = {
+        type: "OBJECT",
+        properties: {
+          questions: {
+            type: "ARRAY",
+            description: "A list of quiz questions.",
+            items: {
+              type: "OBJECT",
+              properties: {
+                question: {
+                  type: "STRING",
+                  description: "The question text.",
+                },
+                options: {
+                  type: "ARRAY",
+                  description: "A list of 4 possible answers.",
+                  items: { type: "STRING" }
+                },
+                correctIndex: {
+                  type: "NUMBER",
+                  description: "The 0-based index of the correct answer in the 'options' array.",
+                },
+                explanation: {
+                  type: "STRING",
+                  description: "A brief explanation of why the answer is correct.",
+                },
+              },
+              required: ["question", "options", "correctIndex", "explanation"]
+            }
+          }
+        },
+        required: ["questions"]
+      };
+
+    // 6. Create the prompt for the model
+    const prompt = `Generate exactly ${numberOfQuestions || 5} quiz questions about ${topic} disaster preparedness at a ${difficulty || 'beginner'} difficulty level. 
+    The quiz is for students in Punjab, India, so focus on practical, region-specific knowledge where applicable.
+    The language for the quiz should be ${language || 'English'}.
+    Ensure there are 4 options for each question.
+    `;
+
+    // 7. Make the API call with the defined schema
+    const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: schema,
+            temperature: 0.8, // A little more creative for varied questions
+        },
+        // Optional: Add safety settings if needed
+        safetySettings: [
+          {
+            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+        ],
     });
 
-    const aiResponse = JSON.parse(completion.choices[0].message.content);
+    const aiResponseText = result.response.text();
+    const aiResponse = JSON.parse(aiResponseText);
     
-    // Format questions for our schema
-    const formattedQuestions = aiResponse.questions.map(q => ({
-      question: q.question,
-      questionType: 'multiple-choice',
-      options: q.options.map((opt, idx) => ({
-        text: opt,
-        isCorrect: idx === q.correctIndex
-      })),
-      correctAnswer: q.options[q.correctIndex],
-      explanation: q.explanation,
-      points: 10,
-      difficulty: 'medium'
-    }));
+    // Format questions for our database schema
+    const formattedQuestions = aiResponse.questions.map(q => {
+        // Basic validation
+        if (!q.options || q.correctIndex === undefined || q.correctIndex >= q.options.length) {
+            console.warn('Skipping malformed AI question:', q);
+            return null; // Skip this question
+        }
+        return {
+            question: q.question,
+            questionType: 'multiple-choice',
+            options: q.options.map((opt, idx) => ({
+                text: opt,
+                isCorrect: idx === q.correctIndex
+            })),
+            correctAnswer: q.options[q.correctIndex],
+            explanation: q.explanation,
+            points: 10, // Default points
+            difficulty: difficulty || 'beginner'
+        }
+    }).filter(q => q !== null); // Remove any skipped questions
 
-    // Create quiz
+    if (formattedQuestions.length === 0) {
+        throw new Error("AI failed to generate valid questions.");
+    }
+
+    // Create quiz in the database
     const newQuiz = await Quiz.create({
       title: `AI Quiz: ${topic}`,
-      description: `AI-generated quiz on ${topic} for disaster preparedness`,
-      category: 'general',
+      description: `An AI-generated quiz about ${topic}.`,
+      category: topic.toLowerCase(),
       questions: formattedQuestions,
       difficulty: difficulty || 'beginner',
       isAIGenerated: true,
@@ -331,15 +382,22 @@ const generateAIQuiz = async (req, res) => {
       language: language || 'en'
     });
 
-    res.json({
+    res.status(201).json({
       status: 'success',
       data: newQuiz
     });
   } catch (error) {
     console.error('Generate AI quiz error:', error);
+    // Check if the error is from the Gemini API (e.g., content blocked)
+    if (error.message.includes('response was blocked')) {
+        return res.status(400).json({
+            status: 'error',
+            message: 'Quiz generation failed because the topic was deemed unsafe. Please try a different topic.'
+        });
+    }
     res.status(500).json({
       status: 'error',
-      message: 'Error generating AI quiz'
+      message: 'An error occurred while generating the AI quiz.'
     });
   }
 };

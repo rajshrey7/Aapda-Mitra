@@ -1,11 +1,11 @@
-const OpenAI = require('openai');
+// 1. Import the Google Generative AI package
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const OpenAI = require('openai'); // You can remove this line if not used elsewhere
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-development'
-});
+// 2. Initialize the Gemini client with your API key from environment variables
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy-key-for-development');
 
-// Disaster preparedness knowledge base
+// Disaster preparedness knowledge base (remains the same)
 const disasterKnowledgeBase = {
   earthquake: {
     before: [
@@ -78,15 +78,16 @@ const disasterKnowledgeBase = {
   }
 };
 
-// @desc    Chat with AI bot
-// @route   POST /api/chatbot/chat
-// @access  Private
+// @desc    Chat with AI bot
+// @route   POST /api/chatbot/chat
+// @access  Private
 const chat = async (req, res) => {
   try {
     const { message, context, language } = req.body;
 
-    // If no OpenAI key, use knowledge base
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key_here') {
+    // 3. If no Gemini key, use knowledge base (updated the environment variable check)
+    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'dummy-key-for-development') {
+      console.log('Using fallback knowledge base.');
       const response = generateKnowledgeBaseResponse(message);
       return res.json({
         status: 'success',
@@ -97,31 +98,37 @@ const chat = async (req, res) => {
       });
     }
 
-    // Create system prompt
-    const systemPrompt = `You are Aapda Mitra, an AI assistant specializing in disaster preparedness education for schools in Punjab, India. 
-    You provide clear, actionable advice about:
-    - Earthquake safety and preparedness
-    - Flood prevention and response
-    - Fire safety measures
-    - First aid procedures
-    - Emergency planning for schools
-    - Region-specific disasters in Punjab
-    
-    Always provide practical, age-appropriate advice. Be encouraging and supportive.
-    If asked in Hindi or Punjabi, respond in the same language.
-    Current context: ${context || 'General inquiry'}`;
+    // 4. Get the Gemini model
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
 
-    const completion = await openai.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: message }
-      ],
-      model: 'gpt-3.5-turbo',
-      temperature: 0.7,
-      max_tokens: 500
+    // Create system prompt (now called a system instruction for Gemini)
+    const systemInstruction = `You are Aapda Mitra, an AI assistant specializing in disaster preparedness education for schools in Punjab, India. 
+  You provide clear, actionable advice about:
+  - Earthquake safety and preparedness
+  - Flood prevention and response
+  - Fire safety measures
+  - First aid procedures
+  - Emergency planning for schools
+  - Region-specific disasters in Punjab
+  
+  Always provide practical, age-appropriate advice. Be encouraging and supportive.
+  If asked in Hindi or Punjabi, respond in the same language.
+  Current context: ${context || 'General inquiry'}`;
+
+    // 5. Construct the payload for Gemini and make the API call
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: message }] }],
+      systemInstruction: {
+        parts: [{ text: systemInstruction }],
+      },
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 500,
+      },
     });
 
-    const response = completion.choices[0].message.content;
+    // 6. Extract the response text
+    const response = await result.response.text();
 
     res.json({
       status: 'success',
@@ -132,7 +139,7 @@ const chat = async (req, res) => {
     });
   } catch (error) {
     console.error('Chat error:', error);
-    
+
     // Fallback to knowledge base on error
     const response = generateKnowledgeBaseResponse(req.body.message);
     res.json({
@@ -145,15 +152,18 @@ const chat = async (req, res) => {
   }
 };
 
-// @desc    Get disaster tips
-// @route   GET /api/chatbot/tips
-// @access  Public
+// The rest of the functions remain exactly the same
+// ... (getDisasterTips, getEmergencyContacts, generateKnowledgeBaseResponse) ...
+
+// @desc    Get disaster tips
+// @route   GET /api/chatbot/tips
+// @access  Public
 const getDisasterTips = async (req, res) => {
   try {
     const { category, phase } = req.query;
-    
+
     let tips = [];
-    
+
     if (category && disasterKnowledgeBase[category]) {
       if (phase && disasterKnowledgeBase[category][phase]) {
         tips = disasterKnowledgeBase[category][phase];
@@ -183,9 +193,9 @@ const getDisasterTips = async (req, res) => {
   }
 };
 
-// @desc    Get emergency contacts
-// @route   GET /api/chatbot/emergency-contacts
-// @access  Public
+// @desc    Get emergency contacts
+// @route   GET /api/chatbot/emergency-contacts
+// @access  Public
 const getEmergencyContacts = async (req, res) => {
   try {
     const contacts = {
@@ -235,41 +245,41 @@ const getEmergencyContacts = async (req, res) => {
   }
 };
 
-// Helper function to generate response from knowledge base
+// Helper function to generate response from knowledge base (remains the same)
 function generateKnowledgeBaseResponse(message) {
   const lowerMessage = message.toLowerCase();
-  
+
   // Check for disaster type mentions
   for (const [disaster, info] of Object.entries(disasterKnowledgeBase)) {
     if (lowerMessage.includes(disaster)) {
       // Check for phase mentions
       if (lowerMessage.includes('before') || lowerMessage.includes('prepare')) {
-        return `Here are preparation tips for ${disaster}:\n\n` + 
-               info.before.map((tip, i) => `${i + 1}. ${tip}`).join('\n');
+        return `Here are preparation tips for ${disaster}:\n\n` +
+          info.before.map((tip, i) => `${i + 1}. ${tip}`).join('\n');
       }
       if (lowerMessage.includes('during')) {
-        return `Here's what to do during a ${disaster}:\n\n` + 
-               info.during.map((tip, i) => `${i + 1}. ${tip}`).join('\n');
+        return `Here's what to do during a ${disaster}:\n\n` +
+          info.during.map((tip, i) => `${i + 1}. ${tip}`).join('\n');
       }
       if (lowerMessage.includes('after')) {
-        return `Here's what to do after a ${disaster}:\n\n` + 
-               info.after.map((tip, i) => `${i + 1}. ${tip}`).join('\n');
+        return `Here's what to do after a ${disaster}:\n\n` +
+          info.after.map((tip, i) => `${i + 1}. ${tip}`).join('\n');
       }
-      
+
       // Return general info about the disaster
       return `Here's comprehensive information about ${disaster} safety:\n\n` +
-             `BEFORE:\n${info.before[0]}\n\n` +
-             `DURING:\n${info.during[0]}\n\n` +
-             `AFTER:\n${info.after[0]}\n\n` +
-             `Would you like more detailed information about any specific phase?`;
+        `BEFORE:\n${info.before[0]}\n\n` +
+        `DURING:\n${info.during[0]}\n\n` +
+        `AFTER:\n${info.after[0]}\n\n` +
+        `Would you like more detailed information about any specific phase?`;
     }
   }
-  
+
   // Default response
   return `I'm Aapda Mitra, your disaster preparedness assistant. I can help you with:
   
   1. 🏔️ Earthquake safety
-  2. 💧 Flood preparedness  
+  2. 💧 Flood preparedness 
   3. 🔥 Fire safety
   4. 🏥 First aid basics
   5. 📞 Emergency contacts
