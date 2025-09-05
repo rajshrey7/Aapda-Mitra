@@ -83,5 +83,13 @@ const startServer = async () => {
     console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 };
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({
+    status: "error",
+    message: "Route not found"
+  });
+});
+
 
 startServer();

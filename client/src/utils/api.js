@@ -1,7 +1,8 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// ✅ Use import.meta.env for Vite
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -20,9 +21,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor for error handling
@@ -30,7 +29,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const message = error.response?.data?.message || 'An error occurred';
-    
+
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -43,12 +42,12 @@ api.interceptors.response.use(
     } else if (error.response?.status >= 500) {
       toast.error('Server error. Please try again later.');
     }
-    
+
     return Promise.reject(error);
   }
 );
 
-// Auth endpoints
+// --- Auth endpoints ---
 export const auth = {
   login: (data) => api.post('/users/login', data),
   register: (data) => api.post('/users/register', data),
@@ -61,7 +60,7 @@ export const auth = {
   }
 };
 
-// Quiz endpoints
+// --- Quiz endpoints ---
 export const quiz = {
   getAll: (params) => api.get('/quiz', { params }),
   getById: (id) => api.get(`/quiz/${id}`),
@@ -69,14 +68,14 @@ export const quiz = {
   generate: (data) => api.post('/quiz/generate', data),
 };
 
-// User endpoints
+// --- User endpoints ---
 export const user = {
   getLeaderboard: (params) => api.get('/users/leaderboard', { params }),
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
 };
 
-// Admin endpoints
+// --- Admin endpoints ---
 export const admin = {
   getDashboard: () => api.get('/admin/dashboard'),
   getUsers: (params) => api.get('/admin/users', { params }),
@@ -88,7 +87,7 @@ export const admin = {
   sendAnnouncement: (data) => api.post('/admin/announcement', data),
 };
 
-// Chatbot endpoints
+// --- Chatbot endpoints ---
 export const chatbot = {
   chat: (message, context) => api.post('/chatbot/chat', { message, context }),
   getTips: (params) => api.get('/chatbot/tips', { params }),

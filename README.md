@@ -1,6 +1,6 @@
 # 🛡️ Aapda Mitra - Disaster Preparedness Platform
 
-![Smart India Hackathon 2024](https://img.shields.io/badge/SIH-2024-blue)
+![Smart India Hackathon 2024](https://img.shields.io/badge/SIH-2025-blue)
 ![MERN Stack](https://img.shields.io/badge/Stack-MERN-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 

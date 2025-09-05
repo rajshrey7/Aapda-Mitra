@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiSchool, FiUsers } from 'react-icons/fi';
+import { FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiUsers } from 'react-icons/fi';
+import { MdSchool } from 'react-icons/md'; // ✅ FIXED school icon
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -38,24 +39,25 @@ const Register = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-2xl"
       >
-        <div className="bg-white rounded-xl shadow-xl p-8">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-4xl">🛡️</span>
+        <div className="p-8 bg-white shadow-xl rounded-xl">
+          <div className="mb-8 text-center">
+            <div className="flex items-center justify-center w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-500 to-blue-600">
+              <span className="text-4xl text-white">🛡️</span>
             </div>
             <h2 className="text-3xl font-bold text-gray-800">Join Aapda Mitra</h2>
-            <p className="text-gray-600 mt-2">Start your disaster preparedness journey today</p>
+            <p className="mt-2 text-gray-600">Start your disaster preparedness journey today</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+
               {/* Name Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Full Name
                 </label>
                 <div className="relative">
-                  <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FiUser className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
                   <input
                     type="text"
                     {...register('name', {
@@ -65,7 +67,7 @@ const Register = () => {
                         message: 'Name must be at least 2 characters'
                       }
                     })}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="John Doe"
                   />
                 </div>
@@ -76,11 +78,11 @@ const Register = () => {
 
               {/* Email Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Email Address
                 </label>
                 <div className="relative">
-                  <FiMail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FiMail className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
                   <input
                     type="email"
                     {...register('email', {
@@ -90,7 +92,7 @@ const Register = () => {
                         message: 'Invalid email address'
                       }
                     })}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="your@email.com"
                   />
                 </div>
@@ -101,17 +103,17 @@ const Register = () => {
 
               {/* School Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   School/Institution
                 </label>
                 <div className="relative">
-                  <FiSchool className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <MdSchool className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2" /> {/* ✅ FIXED */}
                   <input
                     type="text"
                     {...register('school', {
                       required: 'School name is required'
                     })}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="ABC Public School"
                   />
                 </div>
@@ -122,16 +124,16 @@ const Register = () => {
 
               {/* Role Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Role
                 </label>
                 <div className="relative">
-                  <FiUsers className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FiUsers className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
                   <select
                     {...register('role', {
                       required: 'Role is required'
                     })}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Role</option>
                     <option value="student">Student</option>
@@ -145,7 +147,7 @@ const Register = () => {
 
               {/* Class Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Class/Grade (Optional)
                 </label>
                 <input
@@ -158,7 +160,7 @@ const Register = () => {
 
               {/* Region Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Region
                 </label>
                 <select
@@ -174,11 +176,11 @@ const Register = () => {
 
               {/* Password Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Password
                 </label>
                 <div className="relative">
-                  <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FiLock className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     {...register('password', {
@@ -188,13 +190,13 @@ const Register = () => {
                         message: 'Password must be at least 6 characters'
                       }
                     })}
-                    className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full py-2 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute text-gray-400 transform -translate-y-1/2 right-3 top-1/2 hover:text-gray-600"
                   >
                     {showPassword ? <FiEyeOff /> : <FiEye />}
                   </button>
@@ -206,18 +208,18 @@ const Register = () => {
 
               {/* Confirm Password Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FiLock className="absolute text-gray-400 transform -translate-y-1/2 left-3 top-1/2" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     {...register('confirmPassword', {
                       required: 'Please confirm your password',
                       validate: value => value === password || 'Passwords do not match'
                     })}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full py-2 pl-10 pr-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="••••••••"
                   />
                 </div>
@@ -233,7 +235,7 @@ const Register = () => {
                 {...register('terms', {
                   required: 'You must accept the terms and conditions'
                 })}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                className="text-blue-600 border-gray-300 rounded shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
               />
               <label className="ml-2 text-sm text-gray-600">
                 I agree to the{' '}
@@ -249,11 +251,11 @@ const Register = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 text-white transition-all transform rounded-lg bg-gradient-to-r from-green-600 to-blue-600 hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
-                  <div className="spinner w-5 h-5 mr-2"></div>
+                  <div className="w-5 h-5 mr-2 spinner"></div>
                   Creating Account...
                 </span>
               ) : (
@@ -265,7 +267,7 @@ const Register = () => {
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
+              <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700">
                 Login here
               </Link>
             </p>
