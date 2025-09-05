@@ -70,16 +70,16 @@ scoreSchema.index({ user: 1, quiz: 1 });
 scoreSchema.index({ completedAt: -1 });
 
 // Virtual for rank calculation
-scoreSchema.virtual('rank').get(function() {
+scoreSchema.virtual('rank').get(function () {
   return this._rank;
 });
 
 scoreSchema.set('toJSON', { virtuals: true });
 
 // Static method for leaderboard
-scoreSchema.statics.getLeaderboard = async function(quizId = null, limit = 10) {
-  const matchStage = quizId ? { quiz: mongoose.Types.ObjectId(quizId) } : {};
-  
+scoreSchema.statics.getLeaderboard = async function (quizId = null, limit = 10) {
+  const matchStage = quizId ? { quiz: new mongoose.Types.ObjectId(quizId) } : {};
+
   const leaderboard = await this.aggregate([
     { $match: matchStage },
     {
@@ -122,9 +122,9 @@ scoreSchema.statics.getLeaderboard = async function(quizId = null, limit = 10) {
 };
 
 // Static method for user statistics
-scoreSchema.statics.getUserStats = async function(userId) {
+scoreSchema.statics.getUserStats = async function (userId) {
   const stats = await this.aggregate([
-    { $match: { user: mongoose.Types.ObjectId(userId) } },
+    { $match: { user: new mongoose.Types.ObjectId(userId) } },
     {
       $group: {
         _id: null,

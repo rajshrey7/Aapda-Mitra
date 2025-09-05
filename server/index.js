@@ -17,12 +17,7 @@ const chatbotRoutes = require('./routes/chatbotRoutes');
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? 'https://aapda-mitra.vercel.app' 
-    : 'http://localhost:3000',
-  credentials: true
-}));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
