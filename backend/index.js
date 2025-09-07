@@ -1,6 +1,6 @@
 import express from "express";
-import { generateQuiz } from "./services/quiz.services.js";
 import dotenv from "dotenv";
+import quizRouter from "./routes/quize.routes.js";
 dotenv.config();
 
 const port = 8080;
@@ -13,11 +13,7 @@ app.get("/", (req, res) => {
     res.json({ msg: "ping!!" });
 })
 
-app.get("/quiz", async (req, res) => {
-    const questions = await generateQuiz("sunami", 7);
-    console.log(questions);
-    res.json({ msg: "questions generated" });
-})
+app.use("/quiz", quizRouter);
 
 app.listen(port, () => {
     console.log(`---- Server is running on port ${port}`)
