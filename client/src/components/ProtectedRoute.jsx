@@ -18,7 +18,12 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   }
 
   if (requiredRole && user?.role !== requiredRole) {
-    return <Navigate to="/" replace />;
+    // Allow teachers to access admin routes
+    if (requiredRole === 'admin' && user?.role === 'teacher') {
+      // Allow access
+    } else {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return children;

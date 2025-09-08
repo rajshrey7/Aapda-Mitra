@@ -52,14 +52,14 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Admin middleware
+// Admin middleware - Allow both admin and teacher roles
 const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'teacher')) {
     next();
   } else {
     return res.status(403).json({
       status: 'error',
-      message: 'Access denied. Admin privileges required'
+      message: 'Access denied. Admin or Teacher privileges required'
     });
   }
 };

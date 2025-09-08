@@ -14,14 +14,35 @@ import LeaderboardPage from "./pages/LeaderboardPage";
 import DrillsPage from "./pages/DrillsPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Lobby from "./pages/Lobby";
+import GamePlay from "./pages/GamePlay";
+import Modules from "./pages/Modules";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+// WeatherAlertBanner deprecated; using AlertDropdown in Navbar
+import gameSocketService from "./utils/gameSocket";
 
 function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setTimeout(() => setLoading(false), 1000);
+  }, []);
+
+  // Initialize socket connection when user is authenticated
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        gameSocketService.connect(token);
+      } catch (error) {
+        console.error('Failed to connect to game socket:', error);
+      }
+    }
+
+    return () => {
+      gameSocketService.disconnect();
+    };
   }, []);
 
   if (loading) {
@@ -54,11 +75,15 @@ function App() {
               <Route path="/emergency" element={<EmergencyContacts />} />
               <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/quizzes" element={<QuizList />} />
+              <Route path="/modules" element={<Modules />} />
 
               {/* Protected Routes */}
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/quiz/:id" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
               <Route path="/drills" element={<ProtectedRoute><DrillsPage /></ProtectedRoute>} />
+              <Route path="/game/lobby" element={<ProtectedRoute><Lobby /></ProtectedRoute>} />
+              <Route path="/game/play/:sessionId" element={<ProtectedRoute><GamePlay /></ProtectedRoute>} />
+              <Route path="/modules/:id" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
               <Route path="/admin/*" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
 
               {/* Fallback */}

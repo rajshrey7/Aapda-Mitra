@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Earthquake Classroom VR Drill</title>
+    <meta name="description" content="VR Earthquake Drill in Classroom">
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .ui-overlay {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 300px;
+        }
+        .instructions {
+            margin-bottom: 10px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .score {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+        .timer {
+            font-size: 16px;
+            color: #ff6b6b;
+        }
+        .completion-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 2000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="ui-overlay">
+        <div class="instructions">
+            <h3>Earthquake Drill</h3>
+            <p>Find the safe spots and complete the drill!</p>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="score">Score: <span id="score">0</span></div>
+        <div class="timer">Time: <span id="timer">60</span>s</div>
+    </div>
+
+    <div class="completion-message" id="completionMessage">
+        <h2>Drill Complete!</h2>
+        <p>Final Score: <span id="finalScore">0</span></p>
+        <p>Time: <span id="finalTime">0</span>s</p>
+        <button onclick="completeDrill()">Continue</button>
+    </div>
+
+    <a-scene background="color: #87CEEB" vr-mode-ui="enabled: true">
+        <!-- Lighting -->
+        <a-light type="ambient" color="#404040" intensity="0.4"></a-light>
+        <a-light type="directional" position="0 10 5" color="#ffffff" intensity="0.8"></a-light>
+
+        <!-- Classroom Environment -->
+        <a-entity id="classroom">
+            <!-- Floor -->
+            <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" color="#8B4513"></a-plane>
+            
+            <!-- Walls -->
+            <a-plane position="0 2.5 -10" width="20" height="5" color="#F5DEB3"></a-plane>
+            <a-plane position="0 2.5 10" width="20" height="5" color="#F5DEB3"></a-plane>
+            <a-plane position="-10 2.5 0" width="20" height="5" rotation="0 90 0" color="#F5DEB3"></a-plane>
+            <a-plane position="10 2.5 0" width="20" height="5" rotation="0 90 0" color="#F5DEB3"></a-plane>
+            
+            <!-- Ceiling -->
+            <a-plane position="0 5 0" rotation="90 0 0" width="20" height="20" color="#FFFFFF"></a-plane>
+            
+            <!-- Desks (Safe spots) -->
+            <a-box position="-6 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="-2 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="2 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="6 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            
+            <a-box position="-6 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="-2 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="2 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="6 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            
+            <a-box position="-6 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="-2 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="2 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="6 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            
+            <!-- Teacher's desk (Bonus points) -->
+            <a-box position="0 0.5 -8" width="3" height="1" depth="2" color="#654321" class="bonus-spot" data-points="25"></a-box>
+            
+            <!-- Windows (Danger zones) -->
+            <a-plane position="-9.9 2.5 -5" width="2" height="3" rotation="0 90 0" color="#87CEEB" class="danger-zone" data-points="-5"></a-plane>
+            <a-plane position="-9.9 2.5 5" width="2" height="3" rotation="0 90 0" color="#87CEEB" class="danger-zone" data-points="-5"></a-plane>
+            <a-plane position="9.9 2.5 -5" width="2" height="3" rotation="0 90 0" color="#87CEEB" class="danger-zone" data-points="-5"></a-plane>
+            <a-plane position="9.9 2.5 5" width="2" height="3" rotation="0 90 0" color="#87CEEB" class="danger-zone" data-points="-5"></a-plane>
+            
+            <!-- Door (Exit) -->
+            <a-plane position="0 1.5 9.9" width="3" height="2" color="#8B4513" class="exit-zone" data-points="50"></a-plane>
+        </a-entity>
+
+        <!-- Player camera -->
+        <a-camera position="0 1.6 0" wasd-controls="enabled: true" look-controls="enabled: true">
+            <a-cursor></a-cursor>
+        </a-camera>
+
+        <!-- Instructions text -->
+        <a-text value="Find safe spots under desks!\nAvoid windows and doors!\nComplete the drill!" 
+                position="0 3 -5" 
+                align="center" 
+                color="#000000" 
+                width="8"></a-text>
+    </a-scene>
+
+    <script>
+        let score = 0;
+        let timeLeft = 60;
+        let gameActive = true;
+        let visitedSpots = new Set();
+        let startTime = Date.now();
+
+        // Game state
+        const gameState = {
+            score: 0,
+            timeLeft: 60,
+            completed: false,
+            visitedSpots: new Set(),
+            startTime: Date.now()
+        };
+
+        // Update timer
+        const timer = setInterval(() => {
+            if (gameActive && timeLeft > 0) {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }
+        }, 1000);
+
+        // Handle cursor clicks
+        document.addEventListener('click', (event) => {
+            if (!gameActive) return;
+            
+            const target = event.target;
+            if (target.classList.contains('safe-spot') || 
+                target.classList.contains('bonus-spot') || 
+                target.classList.contains('danger-zone') ||
+                target.classList.contains('exit-zone')) {
+                
+                const spotId = target.getAttribute('position');
+                const points = parseInt(target.dataset.points);
+                
+                if (!visitedSpots.has(spotId)) {
+                    visitedSpots.add(spotId);
+                    score += points;
+                    updateScore();
+                    updateProgress();
+                    
+                    // Visual feedback
+                    target.setAttribute('color', points > 0 ? '#00ff00' : '#ff0000');
+                    
+                    // Check for completion
+                    if (target.classList.contains('exit-zone') && score >= 50) {
+                        completeDrill();
+                    }
+                }
+            }
+        });
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            gameState.score = score;
+        }
+
+        function updateProgress() {
+            const progress = Math.min((score / 100) * 100, 100);
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timer);
+            showCompletionMessage();
+        }
+
+        function completeDrill() {
+            gameActive = false;
+            clearInterval(timer);
+            
+            const finalTime = 60 - timeLeft;
+            gameState.completed = true;
+            gameState.finalTime = finalTime;
+            gameState.finalScore = score;
+            
+            // Send completion data to parent
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: 'vr:complete',
+                    data: {
+                        drillType: 'earthquake',
+                        score: score,
+                        timeSpent: finalTime,
+                        completed: true,
+                        performance: {
+                            accuracy: Math.min((score / 100) * 100, 100),
+                            speed: Math.max(100 - (finalTime / 60) * 100, 0),
+                            safety: score > 0 ? 100 : 0
+                        }
+                    }
+                }, '*');
+            }
+            
+            showCompletionMessage();
+        }
+
+        function showCompletionMessage() {
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalTime').textContent = 60 - timeLeft;
+            document.getElementById('completionMessage').style.display = 'block';
+        }
+
+        // Initialize game
+        updateScore();
+        updateProgress();
+    </script>
+</body>
+</html>

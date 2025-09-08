@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import AlertDropdown from './AlertDropdown';
 import { FiMenu, FiX, FiUser, FiLogOut, FiGlobe } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import LanguageSelector from './LanguageSelector';
@@ -23,11 +24,12 @@ const Navbar = () => {
     { path: '/about', label: t('nav.about') },
     { path: '/quizzes', label: t('nav.quizzes') },
     { path: '/drills', label: t('nav.drills'), auth: true },
+    { path: '/game/lobby', label: 'Lobby', auth: true },
     { path: '/leaderboard', label: t('nav.leaderboard') },
     { path: '/emergency', label: t('nav.emergency') },
   ];
 
-  if (user?.role === 'admin') {
+  if (user?.role === 'admin' || user?.role === 'teacher') {
     navLinks.push({ path: '/admin', label: t('nav.admin'), auth: true });
   }
 
@@ -57,6 +59,9 @@ const Navbar = () => {
                 </Link>
               );
             })}
+
+            {/* Alerts */}
+            <AlertDropdown />
 
             {/* Language Selector */}
             <button

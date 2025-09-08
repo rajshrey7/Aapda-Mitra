@@ -15,7 +15,7 @@ const api = axios.create({
 // Request interceptor to add token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('am_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,6 +31,8 @@ api.interceptors.response.use(
     const message = error.response?.data?.message || 'An error occurred';
 
     if (error.response?.status === 401) {
+      localStorage.removeItem('am_token');
+      localStorage.removeItem('am_user');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
@@ -54,6 +56,8 @@ export const auth = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
   logout: () => {
+    localStorage.removeItem('am_token');
+    localStorage.removeItem('am_user');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/';

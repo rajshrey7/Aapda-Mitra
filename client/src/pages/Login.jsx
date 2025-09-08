@@ -23,7 +23,7 @@ const Login = () => {
     const result = await login(data.email, data.password);
     
     if (result.success) {
-      if (result.data.role === 'admin') {
+      if (result.data.role === 'admin' || result.data.role === 'teacher') {
         navigate('/admin');
       } else {
         navigate('/');

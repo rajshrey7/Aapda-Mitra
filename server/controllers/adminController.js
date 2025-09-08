@@ -9,7 +9,7 @@ const getDashboardStats = async (req, res) => {
   try {
     // Get overall statistics
     const totalUsers = await User.countDocuments();
-    const activeUsers = await User.countDocuments({ isActive: true });
+    const activeUsers = await User.countDocuments({ isActive: true });c
     const totalQuizzes = await Quiz.countDocuments();
     const totalScores = await Score.countDocuments();
 
