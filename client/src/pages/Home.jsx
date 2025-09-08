@@ -121,12 +121,20 @@ const Home = () => {
               </motion.div>
             ) : (
               <motion.div variants={itemVariants}>
-                <Link
-                  to="/register"
-                  className="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-xl transition-all transform hover:scale-105 text-lg font-semibold"
-                >
-                  {t('home.start_learning')}
-                </Link>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <Link
+                    to="/drills"
+                    className="inline-flex items-center px-8 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all transform hover:scale-105 text-lg font-semibold"
+                  >
+                    🥽 Start Drill
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-xl transition-all transform hover:scale-105 text-lg font-semibold"
+                  >
+                    {t('home.start_learning')}
+                  </Link>
+                </div>
               </motion.div>
             )}
           </div>

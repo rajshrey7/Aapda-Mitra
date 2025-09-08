@@ -31,7 +31,7 @@ function App() {
 
   // Initialize socket connection when user is authenticated
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('am_token') || localStorage.getItem('token');
     if (token) {
       try {
         gameSocketService.connect(token);
@@ -63,7 +63,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
         <Navbar />
         <main className="container mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
           <AnimatePresence mode="wait">

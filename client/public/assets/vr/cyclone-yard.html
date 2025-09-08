@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Cyclone VR Drill</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body{margin:0;padding:0;font-family:Arial}
+    .ui{position:fixed;top:20px;right:20px;z-index:1000;background:rgba(0,0,0,.8);color:#fff;padding:12px;border-radius:10px;max-width:280px}
+    .bar{height:8px;background:#333;border-radius:10px;overflow:hidden;margin-top:8px}
+    .fill{height:100%;width:0%;background:linear-gradient(90deg,#9b59b6,#16a085);transition:width .3s ease}
+    .done{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.9);color:#fff;padding:22px;border-radius:12px;z-index:1001;display:none}
+    button{background:#16a085;color:#fff;border:0;padding:8px 10px;border-radius:6px;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="ui">
+    <div><strong>Cyclone Drill</strong></div>
+    <div>Time: <span id="timer">60</span>s • Score: <span id="score">0</span></div>
+    <div style="font-size:12px;opacity:.9;margin-top:6px">Beginner Tips: Click blue windows and door to secure, then go to shelter.</div>
+    <div class="bar"><div id="progress" class="fill"></div></div>
+  </div>
+  <div id="done" class="done">
+    <h3>Drill Complete</h3>
+    <div>Score: <span id="fscore">0</span></div>
+    <div>Time: <span id="ftime">0</span>s</div>
+    <div style="margin-top:10px"><button onclick="submitAndClose()">Save Result</button></div>
+  </div>
+
+  <a-scene background="color: #A3D5E0" vr-mode-ui="enabled: true">
+    <a-entity light="type: ambient; color: #BBB"></a-entity>
+    <a-entity light="type: directional; intensity: 0.7" position="1 1 0"></a-entity>
+
+    <!-- Yard -->
+    <a-plane position="0 0 0" rotation="-90 0 0" width="40" height="40" color="#7FB069"></a-plane>
+    <a-box id="house" position="0 1 -6" depth="6" height="2" width="8" color="#ecf0f1"></a-box>
+    <a-box id="shelter" position="-10 1 8" depth="4" height="2" width="6" color="#95a5a6"></a-box>
+
+    <!-- Windows/doors to secure -->
+    <a-plane class="secure hint" position="-3 1.2 -3" width="1.8" height="1" color="#3498db" data-points="10"></a-plane>
+    <a-plane class="secure hint" position="2.8 1.2 -3" width="1.8" height="1" color="#3498db" data-points="10"></a-plane>
+    <a-box class="secure hint" position="0 1 -2.6" depth="0.2" height="1.8" width="1" color="#8e44ad" data-points="10"></a-box>
+
+    <!-- Flying debris -->
+    <a-sphere class="debris" position="6 2 0" radius="0.3" color="#e74c3c"></a-sphere>
+    <a-sphere class="debris" position="-6 2 3" radius="0.3" color="#e67e22"></a-sphere>
+
+    <!-- Player -->
+    <a-entity position="0 1.6 0">
+      <a-camera wasd-controls look-controls>
+        <a-cursor></a-cursor>
+      </a-camera>
+    </a-entity>
+
+    <a-text position="0 3 -1" value="Click windows/door to secure. Go to shelter." color="#333" align="center"></a-text>
+  </a-scene>
+
+  <script>
+    const style = document.createElement('style');
+    style.innerHTML = `.hint { box-shadow: 0 0 12px 2px rgba(100,255,150,0.9); }`;
+    document.head.appendChild(style);
+    const API_BASE = (window.location.origin.includes(':517') ? 'http://localhost:5000' : window.location.origin);
+    let sessionId=null; let score=0; let timeLeft=60; let finished=false; let secured=0;
+
+    async function startSession(){
+      try{
+        const r = await fetch(API_BASE + '/api/drills/start', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({drillType:'cyclone', duration:60})});
+        const j = await r.json(); sessionId = j?.data?.sessionId || null;
+      }catch(e){console.warn('start failed',e)}
+    }
+
+    function addScore(d, reason){
+      score = Math.max(0, score + d);
+      document.getElementById('score').textContent = score;
+      document.getElementById('progress').style.width = Math.min(100, score)+'%';
+      if (window.socket && sessionId) socket.emit('vr:score', { sessionId, scoreDelta: d, reason });
+    }
+
+    function bind(){
+      document.querySelectorAll('.secure').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          if (el.getAttribute('data-secured')) return;
+          el.setAttribute('color', '#2ecc71');
+          el.setAttribute('data-secured', '1');
+          secured += 1; addScore(10,'secure');
+          if (secured >= 3) checkFinish();
+        });
+      });
+      // Debris hits cost points when clicked (simulate avoiding)
+      document.querySelectorAll('.debris').forEach(el=>{
+        const dir = (Math.random()>.5?1:-1);
+        let x = el.object3D.position.x;
+        setInterval(()=>{ x += 0.1*dir; el.object3D.position.x = x; }, 60);
+        el.addEventListener('click', ()=>{ addScore(-5,'hit'); });
+      });
+    }
+
+    function startTimer(){
+      const t = document.getElementById('timer');
+      const intv = setInterval(()=>{
+        if (finished) { clearInterval(intv); return; }
+        timeLeft -= 1; t.textContent = timeLeft;
+        if (timeLeft<=0) { clearInterval(intv); finish(); }
+      }, 1000);
+    }
+
+    function checkFinish(){
+      // Encourage moving to shelter area
+      // When player approaches shelter Z>6 and X<-7
+      const shelter = document.getElementById('shelter');
+      const check = setInterval(()=>{
+        if (finished) { clearInterval(check); return; }
+        const cam = document.querySelector('a-camera');
+        const p = cam.object3D.getWorldPosition(new THREE.Vector3());
+        const inShelter = (p.z > 7 && p.x < -7);
+        if (secured>=3 && inShelter) { clearInterval(check); finish(); }
+      }, 400);
+    }
+
+    async function submitAndClose(){
+      if (!sessionId) return;
+      const payload = {
+        drillType:'cyclone', score, timeTaken:60-timeLeft, totalTime:60,
+        performance:{ accuracy: 70, speed: 60, safety: 80, teamwork: 50, decisionMaking: 75 },
+        completedSteps:[{ stepId:'secure', stepName:'Secured windows/door', completed:true, timeSpent:15, score:30 }],
+        missedSteps:[], metadata:{ device:navigator.userAgent }
+      };
+      try {
+        await fetch(API_BASE + '/api/drills/' + sessionId + '/result', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      } catch(e){ console.warn('save failed', e); }
+    }
+
+    function finish(){
+      if (finished) return; finished = true;
+      document.getElementById('fscore').textContent = score;
+      document.getElementById('ftime').textContent = 60 - timeLeft;
+      document.getElementById('done').style.display = 'block';
+    }
+
+    function initSocket(){
+      try { const token = localStorage.getItem('token'); window.socket = io(API_BASE, { auth:{ token } }); if (sessionId) socket.emit('vr:join', { sessionId }); } catch(e){}
+    }
+
+    window.addEventListener('load', async ()=>{
+      await startSession();
+      initSocket();
+      bind();
+      startTimer();
+      checkFinish();
+    });
+  </script>
+</body>
+</html>
+
+

@@ -68,7 +68,8 @@
     <div class="ui-overlay">
         <div class="instructions">
             <h3>Earthquake Drill</h3>
-            <p>Find the safe spots and complete the drill!</p>
+            <p>Beginner Tips: Drop under a desk, cover head, hold, then head to exit.</p>
+            <p style="font-size:12px;opacity:.9">Controls: WASD/Arrow keys to move, mouse/touch to look, click to interact.</p>
         </div>
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill"></div>
@@ -104,20 +105,20 @@
             <a-plane position="0 5 0" rotation="90 0 0" width="20" height="20" color="#FFFFFF"></a-plane>
             
             <!-- Desks (Safe spots) -->
-            <a-box position="-6 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
-            <a-box position="-2 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
-            <a-box position="2 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
-            <a-box position="6 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="-6 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
+            <a-box position="-2 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
+            <a-box position="2 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
+            <a-box position="6 0.5 -6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
             
-            <a-box position="-6 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
-            <a-box position="-2 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
-            <a-box position="2 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
-            <a-box position="6 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="-6 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
+            <a-box position="-2 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
+            <a-box position="2 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
+            <a-box position="6 0.5 0" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
             
-            <a-box position="-6 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
-            <a-box position="-2 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
-            <a-box position="2 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
-            <a-box position="6 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot" data-points="10"></a-box>
+            <a-box position="-6 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
+            <a-box position="-2 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
+            <a-box position="2 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
+            <a-box position="6 0.5 6" width="2" height="1" depth="1" color="#8B4513" class="safe-spot hint" data-points="10"></a-box>
             
             <!-- Teacher's desk (Bonus points) -->
             <a-box position="0 0.5 -8" width="3" height="1" depth="2" color="#654321" class="bonus-spot" data-points="25"></a-box>
@@ -129,7 +130,7 @@
             <a-plane position="9.9 2.5 5" width="2" height="3" rotation="0 90 0" color="#87CEEB" class="danger-zone" data-points="-5"></a-plane>
             
             <!-- Door (Exit) -->
-            <a-plane position="0 1.5 9.9" width="3" height="2" color="#8B4513" class="exit-zone" data-points="50"></a-plane>
+            <a-plane position="0 1.5 9.9" width="3" height="2" color="#8B4513" class="exit-zone hint" data-points="50"></a-plane>
         </a-entity>
 
         <!-- Player camera -->
@@ -146,6 +147,10 @@
     </a-scene>
 
     <script>
+        // Glow hint for beginner guidance
+        const style = document.createElement('style');
+        style.innerHTML = `.hint { box-shadow: 0 0 12px 2px rgba(80,200,255,0.8); }`;
+        document.head.appendChild(style);
         let score = 0;
         let timeLeft = 60;
         let gameActive = true;

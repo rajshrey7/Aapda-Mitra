@@ -137,6 +137,58 @@ function initialize(io) {
       }
     });
 
+    // VR drill realtime events
+    // Join a VR drill room (aliases to game room)
+    socket.on('vr:join', async (data) => {
+      try {
+        const { sessionId } = data || {};
+        if (!sessionId) return;
+
+        const session = await GameSession.findById(sessionId);
+        if (!session) {
+          return socket.emit('error', { message: 'VR session not found' });
+        }
+
+        socket.join(`game:${sessionId}`);
+        io.to(`game:${sessionId}`).emit('vr:playerJoined', { user: socket.user, socketId: socket.id });
+      } catch (error) {
+        console.error('vr:join error:', error);
+      }
+    });
+
+    // Broadcast player transform/state (position, rotation, gesture)
+    socket.on('vr:state', (data) => {
+      try {
+        const { sessionId, transform } = data || {};
+        if (!sessionId || !transform) return;
+        socket.to(`game:${sessionId}`).emit('vr:state', { user: socket.user, socketId: socket.id, transform });
+      } catch (error) {
+        console.error('vr:state error:', error);
+      }
+    });
+
+    // Broadcast player actions (pickup, use, rescue, secure)
+    socket.on('vr:action', (data) => {
+      try {
+        const { sessionId, action, payload } = data || {};
+        if (!sessionId || !action) return;
+        socket.to(`game:${sessionId}`).emit('vr:action', { user: socket.user, socketId: socket.id, action, payload });
+      } catch (error) {
+        console.error('vr:action error:', error);
+      }
+    });
+
+    // Sync score updates within VR drill
+    socket.on('vr:score', (data) => {
+      try {
+        const { sessionId, scoreDelta, reason } = data || {};
+        if (!sessionId || typeof scoreDelta !== 'number') return;
+        io.to(`game:${sessionId}`).emit('vr:score', { user: socket.user, scoreDelta, reason });
+      } catch (error) {
+        console.error('vr:score error:', error);
+      }
+    });
+
     socket.on('joinSession', async (data) => {
       try {
         const { sessionId } = data;

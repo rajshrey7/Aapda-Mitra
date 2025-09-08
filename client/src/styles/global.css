@@ -16,6 +16,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Global dark theme base */
+.dark body {
+  background-color: #0f172a; /* slate-900 */
+  color: #e5e7eb; /* gray-200 */
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

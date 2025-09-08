@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiAlertTriangle, FiDroplet, FiZap, FiPlay, FiPause, FiRotateCcw, FiCheckCircle, FiClock, FiTarget } from 'react-icons/fi';
 import axios from 'axios';
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import api from '../config/api';
+import gameSocketService from '../utils/gameSocket';
 
 const DrillsPage = () => {
   const [drills, setDrills] = useState([]);
@@ -13,13 +16,15 @@ const DrillsPage = () => {
   const [currentCheckpoint, setCurrentCheckpoint] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [showIntro, setShowIntro] = useState(false);
 
   // Fetch available drills
   const fetchDrills = async () => {
     try {
       setLoading(true);
-      // Since there's no direct drills endpoint, we'll use mock data
-      // In a real implementation, you would create a drills endpoint
       setDrills([]);
     } catch (err) {
       setError('Failed to fetch drills');
@@ -38,6 +43,7 @@ const DrillsPage = () => {
     {
       id: 1,
       title: 'Earthquake Response Drill',
+      type: 'earthquake',
       icon: FiZap,
       color: 'orange',
       description: 'Practice Drop, Cover, and Hold On technique in a virtual classroom',
@@ -54,6 +60,7 @@ const DrillsPage = () => {
     {
       id: 2,
       title: 'Fire Evacuation Drill',
+      type: 'fire',
       icon: FiAlertTriangle,
       color: 'red',
       description: 'Learn safe evacuation procedures during a fire emergency',
@@ -71,13 +78,13 @@ const DrillsPage = () => {
     {
       id: 3,
       title: 'Flood Response Drill',
+      type: 'flood',
       icon: FiDroplet,
       color: 'blue',
       description: 'Understand flood safety and response measures',
       duration: 360, // 6 minutes in seconds
       difficulty: 'Basic',
-      // Use existing scene for now to ensure it loads; can replace with /assets/vr/flood-scenario.html if added
-      vrScene: '/assets/vr/earthquake-classroom.html',
+      vrScene: '/assets/vr/flood-city.html',
       checkpoints: [
         { id: 1, title: 'Move to higher ground', description: 'Get to the highest floor possible', points: 60 },
         { id: 2, title: 'Avoid floodwaters', description: 'Never walk or drive through floodwaters', points: 60 },
@@ -89,13 +96,85 @@ const DrillsPage = () => {
 
   const currentDrills = drills.length > 0 ? drills : mockDrills;
 
+  // Leaderboard fetch + socket updates
+  const fetchLeaderboard = async (type) => {
+    try {
+      const res = await api.getDrillsLeaderboard({ drillType: type, drillMode: 'vr', limit: 10, timeRange: 'week' });
+      setLeaderboard(res?.data?.leaderboard || []);
+    } catch (e) {
+      // non-fatal
+    }
+  };
+
+  useEffect(() => {
+    const handler = (evt) => {
+      const payload = evt?.__forwardVR || evt?.data?.__forwardVR;
+      if (!payload) return;
+      const sessionId = window.__DRILL_SESSION_ID__;
+      const result = payload?.data;
+      if (!sessionId || !selectedDrill || !result) return;
+
+      // Build submit payload and post to backend
+      const submit = {
+        drillType: selectedDrill.type,
+        score: result.score,
+        timeTaken: result.timeSpent,
+        totalTime: selectedDrill.duration,
+        performance: result.performance || { accuracy: 60, speed: 60, safety: 60, teamwork: 50, decisionMaking: 55 },
+        completedSteps: [],
+        missedSteps: [],
+        difficulty: 'medium',
+        metadata: { device: navigator.userAgent, platform: navigator.platform }
+      };
+
+      api.submitDrillResult(sessionId, submit)
+        .then((resp) => {
+          setFeedback(resp?.data?.feedback || resp?.data || null);
+          setShowFeedback(true);
+          // Refresh leaderboard
+          fetchLeaderboard(selectedDrill.type);
+        })
+        .catch(() => {
+          setShowFeedback(true);
+        });
+    };
+
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [selectedDrill]);
+
+  useEffect(() => {
+    // Socket subscribe to leaderboard updates
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const socket = gameSocketService.connect(token);
+        const onUpdate = (data) => {
+          if (selectedDrill && data?.type === 'drill') {
+            fetchLeaderboard(selectedDrill.type);
+          }
+        };
+        gameSocketService.on('leaderboard:update', onUpdate);
+        return () => gameSocketService.off('leaderboard:update', onUpdate);
+      } catch { /* ignore */ }
+    }
+  }, [selectedDrill]);
+
   const startDrill = (drill) => {
     setSelectedDrill(drill);
     setTimeLeft(drill.duration);
     setScore(0);
     setCheckpoints(drill.checkpoints);
     setCurrentCheckpoint(0);
-    setIsPlaying(true);
+    setIsPlaying(false);
+    setShowIntro(true);
+    fetchLeaderboard(drill.type);
+    // Start backend session (non-blocking)
+    api.startDrill({ drillType: drill.type, duration: drill.duration, difficulty: 'medium' })
+      .then((res) => {
+        window.__DRILL_SESSION_ID__ = res?.data?.sessionId;
+      })
+      .catch(() => {});
   };
 
   const completeCheckpoint = (checkpointId) => {
@@ -147,7 +226,7 @@ const DrillsPage = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50"
+      className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800"
     >
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -163,7 +242,7 @@ const DrillsPage = () => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-gray-600 text-lg"
+            className="text-gray-600 dark:text-gray-300 text-lg"
           >
             Practice emergency response through immersive VR simulations
           </motion.p>
@@ -185,7 +264,7 @@ const DrillsPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   whileHover={{ scale: 1.05, y: -5 }}
-                  className="bg-white rounded-xl shadow-xl overflow-hidden cursor-pointer"
+                  className="bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden cursor-pointer"
                   onClick={() => startDrill(drill)}
                 >
                   <div className={`bg-gradient-to-br from-${drill.color}-500 to-${drill.color}-600 p-8 text-white`}>
@@ -193,21 +272,21 @@ const DrillsPage = () => {
                     <h3 className="text-2xl font-bold text-center">{drill.title}</h3>
                   </div>
                   <div className="p-6">
-                    <p className="text-gray-600 mb-6 text-center">{drill.description}</p>
+                    <p className="text-gray-600 dark:text-gray-300 mb-6 text-center">{drill.description}</p>
                     
                     <div className="space-y-3 mb-6">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Duration:</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Duration:</span>
                         <span className="font-semibold">{formatTime(drill.duration)}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Difficulty:</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Difficulty:</span>
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold bg-${drill.color}-100 text-${drill.color}-800`}>
                           {drill.difficulty}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Checkpoints:</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Checkpoints:</span>
                         <span className="font-semibold">{drill.checkpoints.length}</span>
                       </div>
                     </div>
@@ -229,20 +308,20 @@ const DrillsPage = () => {
               className="max-w-7xl mx-auto"
             >
               {/* Drill Header */}
-              <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 mb-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className={`p-3 rounded-full bg-${selectedDrill.color}-100`}>
                       <selectedDrill.icon className={`w-8 h-8 text-${selectedDrill.color}-600`} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900">{selectedDrill.title}</h2>
-                      <p className="text-gray-600">{selectedDrill.description}</p>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedDrill.title}</h2>
+                      <p className="text-gray-600 dark:text-gray-300">{selectedDrill.description}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setSelectedDrill(null)}
-                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                    className="text-gray-500 hover:text-gray-300 transition-colors"
                   >
                     ✕
                   </button>
@@ -252,7 +331,7 @@ const DrillsPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* VR Scene */}
                 <div className="lg:col-span-2">
-                  <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden">
                     <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-4">
                       <h3 className="text-lg font-semibold flex items-center">
                         <span className="mr-2">🥽</span>
@@ -266,7 +345,7 @@ const DrillsPage = () => {
                         title={`VR Scene for ${selectedDrill.title}`}
                         allow="vr; accelerometer; gyroscope; magnetometer"
                       />
-                      {!isPlaying && (
+                      {!isPlaying && !showIntro && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                           <button
                             onClick={() => setIsPlaying(true)}
@@ -281,17 +360,17 @@ const DrillsPage = () => {
                   </div>
                 </div>
 
-                {/* Drill Controls & Progress */}
+                {/* Right Column: Progress + Leaderboard */}
                 <div className="space-y-6">
                   {/* Timer & Score */}
-                  <div className="bg-white rounded-xl shadow-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Drill Progress</h3>
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Drill Progress</h3>
                     
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <FiClock className="w-5 h-5 text-blue-600" />
-                          <span className="text-gray-600">Time Left:</span>
+                          <span className="text-gray-600 dark:text-gray-300">Time Left:</span>
                         </div>
                         <span className={`text-2xl font-bold ${timeLeft < 60 ? 'text-red-600' : 'text-blue-600'}`}>
                           {formatTime(timeLeft)}
@@ -301,7 +380,7 @@ const DrillsPage = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <FiTarget className="w-5 h-5 text-green-600" />
-                          <span className="text-gray-600">Score:</span>
+                          <span className="text-gray-600 dark:text-gray-300">Score:</span>
                         </div>
                         <span className="text-2xl font-bold text-green-600">{score}</span>
                       </div>
@@ -309,7 +388,7 @@ const DrillsPage = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <FiCheckCircle className="w-5 h-5 text-purple-600" />
-                          <span className="text-gray-600">Checkpoints:</span>
+                          <span className="text-gray-600 dark:text-gray-300">Checkpoints:</span>
                         </div>
                         <span className="text-lg font-semibold text-purple-600">
                           {currentCheckpoint}/{checkpoints.length}
@@ -340,53 +419,39 @@ const DrillsPage = () => {
                     </div>
                   </div>
 
-                  {/* Checkpoints */}
-                  <div className="bg-white rounded-xl shadow-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Checkpoints</h3>
-                    <div className="space-y-3">
-                      {checkpoints.map((checkpoint, index) => (
-                        <motion.div
-                          key={checkpoint.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className={`p-3 rounded-lg border-2 transition-all ${
-                            index < currentCheckpoint
-                              ? 'bg-green-50 border-green-300'
-                              : index === currentCheckpoint
-                              ? 'bg-blue-50 border-blue-300'
-                              : 'bg-gray-50 border-gray-200'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className={`font-semibold ${
-                                index < currentCheckpoint ? 'text-green-800' : 
-                                index === currentCheckpoint ? 'text-blue-800' : 'text-gray-600'
-                              }`}>
-                                {checkpoint.title}
-                              </h4>
-                              <p className={`text-sm ${
-                                index < currentCheckpoint ? 'text-green-600' : 
-                                index === currentCheckpoint ? 'text-blue-600' : 'text-gray-500'
-                              }`}>
-                                {checkpoint.description}
-                              </p>
+                  {/* Leaderboard */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Live Leaderboard</h3>
+                    {leaderboard.length === 0 ? (
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">No entries yet.</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {leaderboard.map((entry, idx) => (
+                          <div key={idx} className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-6 text-gray-500">{idx + 1}</div>
+                              <div className="font-medium text-gray-800 dark:text-gray-100">{entry.user?.name || 'Student'}</div>
                             </div>
-                            <div className="text-right">
-                              <span className={`text-sm font-semibold ${
-                                index < currentCheckpoint ? 'text-green-600' : 
-                                index === currentCheckpoint ? 'text-blue-600' : 'text-gray-500'
-                              }`}>
-                                {checkpoint.points} pts
-                              </span>
-                              {index < currentCheckpoint && (
-                                <FiCheckCircle className="w-5 h-5 text-green-600 mt-1" />
-                              )}
-                            </div>
+                            <div className="text-green-600 font-semibold">{entry.score}</div>
                           </div>
-                        </motion.div>
-                      ))}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Simple Analytics (mock) */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Preparedness Trend</h3>
+                    <div className="h-40">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={[{name:'Try 1',score:40},{name:'Try 2',score:55},{name:'Try 3',score:70}]}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis domain={[0,100]} />
+                          <Tooltip />
+                          <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 </div>
@@ -401,9 +466,9 @@ const DrillsPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="mt-16 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8"
+            className="mt-16 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-8"
           >
-            <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">Why Practice VR Drills?</h2>
+            <h2 className="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">Why Practice VR Drills?</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 { icon: '🧠', title: 'Build Muscle Memory', desc: 'Create automatic responses for emergency situations' },
@@ -428,24 +493,129 @@ const DrillsPage = () => {
             </div>
           </motion.div>
         )}
+      </div>
 
-        {/* Error Message */}
-        {error && (
+      {/* Intro Instructions Modal */}
+      <AnimatePresence>
+        {showIntro && selectedDrill && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-md mx-auto mt-8 bg-red-50 border border-red-200 rounded-lg p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowIntro(false)}
           >
-            <div className="flex items-center">
-              <div className="text-red-500 mr-3">⚠️</div>
-              <div>
-                <p className="text-red-800 font-medium">Error</p>
-                <p className="text-red-600 text-sm">{error}</p>
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-xl w-full p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">How to Play</h3>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">Follow these steps to complete the drill:</p>
+              <ul className="list-decimal ml-5 space-y-2 text-gray-700 dark:text-gray-300">
+                {selectedDrill.type === 'earthquake' && (
+                  <>
+                    <li>Drop to the ground. Find a desk and get under it.</li>
+                    <li>Cover your head and neck. Stay away from windows.</li>
+                    <li>Hold on until shaking stops. Then head to the exit.</li>
+                  </>
+                )}
+                {selectedDrill.type === 'fire' && (
+                  <>
+                    <li>Stay low to avoid smoke. Avoid red fire zones.</li>
+                    <li>Use a fire extinguisher if reachable (red cylinder).</li>
+                    <li>Find the green EXIT door and evacuate.</li>
+                  </>
+                )}
+                {selectedDrill.type === 'flood' && (
+                  <>
+                    <li>Move to higher ground (climb onto buildings).</li>
+                    <li>Pick up the green kit and yellow rope.</li>
+                    <li>Rescue NPCs by clicking them when water is high.</li>
+                  </>
+                )}
+              </ul>
+              <div className="mt-5 text-sm text-gray-600 dark:text-gray-400">Controls: WASD / Arrow keys to move, Mouse/touch to look, Click to interact.</div>
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowIntro(false)}
+                  className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-800"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => { setShowIntro(false); setIsPlaying(true); }}
+                  className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Start
+                </button>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         )}
-      </div>
+      </AnimatePresence>
+
+      {/* AI Feedback Modal */}
+      <AnimatePresence>
+        {showFeedback && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowFeedback(false)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Preparedness Feedback</h3>
+              {feedback ? (
+                <div className="space-y-3 text-sm">
+                  {feedback.aiAnalysis && <p className="text-gray-700 dark:text-gray-300">{feedback.aiAnalysis}</p>}
+                  {Array.isArray(feedback.strengths) && feedback.strengths.length > 0 && (
+                    <div>
+                      <div className="font-semibold text-green-700">Strengths</div>
+                      <ul className="list-disc ml-5 text-gray-700 dark:text-gray-300">
+                        {feedback.strengths.map((s, i) => <li key={i}>{s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {Array.isArray(feedback.recommendations) && feedback.recommendations.length > 0 && (
+                    <div>
+                      <div className="font-semibold text-blue-700">Recommendations</div>
+                      <ul className="list-disc ml-5 text-gray-700 dark:text-gray-300">
+                        {feedback.recommendations.map((s, i) => <li key={i}>{s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-700 dark:text-gray-300">Great work! Result saved.</p>
+              )}
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowFeedback(false)}
+                  className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-800"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => setSelectedDrill(null)}
+                  className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Next
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

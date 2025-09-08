@@ -21,6 +21,7 @@ const modulesRoutes = require('./routes/modules');
 const alertsRoutes = require('./routes/alerts');
 const emergencyRoutes = require('./routes/emergency');
 const chatRoutes = require('./routes/chat');
+const drillsRoutes = require('./routes/drills');
 
 // Import services
 const { initialize: initializeSocketService } = require('./services/socketService');
@@ -52,7 +53,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'", "https://aframe.io", "https://cdn.jsdelivr.net"],
+      scriptSrc: ["'self'", "https://aframe.io", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: [
         "'self'",
@@ -109,6 +110,7 @@ app.use('/api/modules', modulesRoutes);
 app.use('/api/alerts', alertsRoutes);
 app.use('/api/emergency', emergencyRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/drills', drillsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

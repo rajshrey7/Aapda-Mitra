@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +13,18 @@ const Navbar = () => {
   const { t } = useTranslation();
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark');
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (dark) {
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [dark]);
 
   const handleLogout = () => {
     logout();
@@ -34,7 +46,7 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="bg-white shadow-lg sticky top-0 z-50">
+    <nav className="bg-white dark:bg-gray-900 shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -42,7 +54,7 @@ const Navbar = () => {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">🛡️</span>
             </div>
-            <span className="font-bold text-xl text-gray-800">{t('app_name')}</span>
+            <span className="font-bold text-xl text-gray-800 dark:text-gray-100">{t('app_name')}</span>
           </Link>
 
           {/* Desktop Menu */}
@@ -53,7 +65,7 @@ const Navbar = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                  className="text-gray-700 dark:text-gray-200 hover:text-blue-600 font-medium transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -66,9 +78,18 @@ const Navbar = () => {
             {/* Language Selector */}
             <button
               onClick={() => setShowLanguage(!showLanguage)}
-              className="p-2 text-gray-700 hover:text-blue-600 transition-colors"
+              className="p-2 text-gray-700 dark:text-gray-200 hover:text-blue-600 transition-colors"
             >
               <FiGlobe size={20} />
+            </button>
+
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={() => setDark(d => !d)}
+              className="px-3 py-1 rounded border text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+              title="Toggle theme"
+            >
+              {dark ? '🌙' : '☀️'}
             </button>
 
             {/* Auth Buttons */}
@@ -76,7 +97,7 @@ const Navbar = () => {
               <div className="flex items-center space-x-4">
                 <Link
                   to="/profile"
-                  className="flex items-center space-x-2 text-gray-700 hover:text-blue-600"
+                  className="flex items-center space-x-2 text-gray-700 dark:text-gray-200 hover:text-blue-600"
                 >
                   <FiUser size={20} />
                   <span>{user?.name?.split(' ')[0]}</span>

@@ -157,6 +157,73 @@ Response:
 ```
 
 ### Admin Endpoints
+### VR Drill Endpoints
+
+#### POST /api/drills/start
+Start a VR drill session and receive a `sessionId`.
+```json
+Request:
+{
+  "drillType": "earthquake|flood|fire|cyclone",
+  "duration": 60,
+  "difficulty": "easy|medium|hard"
+}
+
+Response:
+{
+  "status": "success",
+  "data": {
+    "sessionId": "string",
+    "drillType": "string",
+    "duration": 60,
+    "difficulty": "medium"
+  }
+}
+```
+
+#### POST /api/drills/:id/result
+Submit a completed VR drill result.
+```json
+Request:
+{
+  "drillType": "earthquake|flood|fire|cyclone",
+  "score": 85,
+  "timeTaken": 42,
+  "totalTime": 60,
+  "performance": {
+    "accuracy": 80,
+    "speed": 70,
+    "safety": 90,
+    "teamwork": 60,
+    "decisionMaking": 75
+  },
+  "completedSteps": [{"stepId":"x","stepName":"y","completed":true,"timeSpent":10,"score":20}],
+  "missedSteps": [{"stepId":"m","stepName":"z","importance":"important","impact":"..."}],
+  "difficulty": "medium",
+  "metadata": {"device":"UA", "platform":"web"}
+}
+
+Response:
+{
+  "status": "success",
+  "data": { /* DrillResult document */ }
+}
+```
+
+#### GET /api/drills/leaderboard
+Retrieve leaderboard for VR drills.
+```json
+Query:
+{
+  "drillType": "earthquake|flood|fire|cyclone",
+  "drillMode": "vr",
+  "school": "string",
+  "region": "string",
+  "limit": 10,
+  "timeRange": "day|week|month"
+}
+```
+
 
 #### GET /api/admin/dashboard
 Get admin dashboard statistics.
@@ -256,6 +323,17 @@ Response:
 - **Chatbot**: AI-powered chat interface
 - **DrillSimulation**: Virtual drill interface
 
+### VR Scenes (A-Frame / WebXR)
+- `client/public/assets/vr/earthquake-classroom.html`
+- `client/public/assets/vr/fire-building.html`
+- `client/public/assets/vr/flood-city.html`
+- `client/public/assets/vr/cyclone-yard.html`
+
+Notes:
+- Optimized for low-end mobile: low-poly primitives, minimal textures.
+- Uses new backend endpoints and optional Socket.IO for multiplayer sync.
+
+
 ### Pages
 - **Home**: Landing page with features
 - **Login/Register**: Authentication pages
@@ -265,6 +343,9 @@ Response:
 - **EmergencyContacts**: Emergency numbers
 
 ## Deployment Guide
+After starting the server, ensure Helmet CSP allows:
+- Scripts: `https://aframe.io`, `https://cdn.jsdelivr.net`, `https://cdn.socket.io`
+
 
 ### Prerequisites
 - Node.js v14+

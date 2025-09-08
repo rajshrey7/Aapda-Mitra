@@ -40,6 +40,11 @@ export const API_ENDPOINTS = {
   // Chat
   CHAT_MESSAGES: `${API_BASE_URL}/api/chat/messages`,
   CHAT_ROOMS: `${API_BASE_URL}/api/chat/rooms`,
+
+  // Drills (VR)
+  DRILLS_START: `${API_BASE_URL}/api/drills/start`,
+  DRILLS_RESULT: `${API_BASE_URL}/api/drills/:id/result`,
+  DRILLS_LEADERBOARD: `${API_BASE_URL}/api/drills/leaderboard`,
   
   // Health
   HEALTH: `${API_BASE_URL}/api/health`
@@ -122,7 +127,15 @@ export const api = {
   }),
   
   // Health
-  checkHealth: () => apiRequest(API_ENDPOINTS.HEALTH)
+  checkHealth: () => apiRequest(API_ENDPOINTS.HEALTH),
+
+  // Drills
+  startDrill: (payload) => apiRequest(API_ENDPOINTS.DRILLS_START, { method: 'POST', body: JSON.stringify(payload) }),
+  submitDrillResult: (sessionId, payload) => apiRequest(API_ENDPOINTS.DRILLS_RESULT.replace(':id', sessionId), { method: 'POST', body: JSON.stringify(payload) }),
+  getDrillsLeaderboard: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return apiRequest(`${API_ENDPOINTS.DRILLS_LEADERBOARD}${q ? `?${q}` : ''}`);
+  }
 };
 
 export default api;

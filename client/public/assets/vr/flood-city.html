@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Flood VR Drill</title>
+    <meta name="description" content="VR Flood Drill">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-+jW1n3o4K0p7k+S6Ytq4c0S6qHJDVfM0k5hI9v0M3O1JfGom4s4UOq1O5cE6C6l7" crossorigin="anonymous"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        .ui-overlay { position: fixed; top: 20px; left: 20px; z-index: 1000; background: rgba(0,0,0,0.8); color: #fff; padding: 12px 14px; border-radius: 10px; max-width: 320px; }
+        .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .progress { height: 8px; background: #333; border-radius: 10px; overflow: hidden; margin-top: 8px; }
+        .fill { height: 100%; width: 0%; background: linear-gradient(90deg,#2ecc71,#3498db); transition: width .3s ease; }
+        .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.85); color: #fff; padding: 10px 14px; border-radius: 8px; z-index: 1001; display: none; }
+        .done { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: rgba(0,0,0,.9); color: #fff; padding: 24px 20px; border-radius: 12px; text-align: center; z-index: 1002; display: none; }
+        button { background: #3498db; color: #fff; border: 0; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="ui-overlay">
+        <div class="row"><strong>Flood Drill</strong><span>Time: <span id="timer">75</span>s</span></div>
+        <div class="row"><span>Score: <span id="score">0</span></span><span>Rescued: <span id="rescued">0</span>/3</span></div>
+        <div style="font-size:12px;opacity:.9;margin-top:6px">Beginner Tips: Climb to higher ground, pick kit/rope, rescue NPCs when water rises.</div>
+        <div class="progress"><div class="fill" id="progressFill"></div></div>
+        <div style="margin-top:8px;font-size:12px;opacity:.9">Tip: Move to higher ground and help NPCs.</div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="done" id="done">
+        <h3>Drill Complete</h3>
+        <div>Final Score: <span id="finalScore">0</span></div>
+        <div>Time: <span id="finalTime">0</span>s</div>
+        <div style="margin-top:10px"><button onclick="completeDrill()">Save Result</button></div>
+    </div>
+
+    <a-scene background="color: #7FB3D5" vr-mode-ui="enabled: true">
+        <a-assets>
+            <img id="npc" src="https://cdn.jsdelivr.net/gh/pmndrs/drei-assets@master/images/character.png"/>
+        </a-assets>
+
+        <!-- Lights -->
+        <a-entity light="type: ambient; color: #BBB"></a-entity>
+        <a-entity light="type: directional; color: #fff; intensity: 0.6" position="1 1 0"></a-entity>
+
+        <!-- Ground and water -->
+        <a-plane position="0 0 0" rotation="-90 0 0" width="60" height="60" color="#7f8c8d"></a-plane>
+        <a-box id="water" position="0 0.1 0" depth="60" height="0.2" width="60" color="#3498db" opacity="0.8"></a-box>
+
+        <!-- Buildings (higher ground) -->
+        <a-box position="-8 1 -5" depth="8" height="2" width="8" color="#95a5a6"></a-box>
+        <a-box position="12 1 7" depth="8" height="2" width="8" color="#95a5a6"></a-box>
+        <a-box position="0 2 15" depth="10" height="4" width="10" color="#bdc3c7"></a-box>
+
+        <!-- Items -->
+        <a-box id="kit" position="-5 0.5 -2" depth="0.6" height="0.6" width="0.6" color="#27ae60" class="pickup hint" data-points="10"></a-box>
+        <a-box id="rope" position="6 0.5 6" depth="0.6" height="0.6" width="0.6" color="#f1c40f" class="pickup hint" data-points="10"></a-box>
+
+        <!-- NPCs to rescue (bring them to high ground boxes) -->
+        <a-sphere class="npc" position="-2 0.6 4" radius="0.4" color="#e74c3c"></a-sphere>
+        <a-sphere class="npc" position="9 0.6 -6" radius="0.4" color="#e67e22"></a-sphere>
+        <a-sphere class="npc" position="3 0.6 10" radius="0.4" color="#c0392b"></a-sphere>
+
+        <!-- Player -->
+        <a-entity id="rig" position="0 1.6 0">
+            <a-camera wasd-controls look-controls>
+                <a-cursor></a-cursor>
+            </a-camera>
+        </a-entity>
+
+        <!-- Guidance text -->
+        <a-text position="0 3 -3" value="Climb buildings. Rescue NPCs. Avoid deep water." color="#fff" align="center"></a-text>
+    </a-scene>
+
+    <script>
+      const style = document.createElement('style');
+      style.innerHTML = `.hint { box-shadow: 0 0 12px 2px rgba(50,200,255,0.8); }`;
+      document.head.appendChild(style);
+      const API_BASE = (window.location.origin.includes(':517') ? 'http://localhost:5000' : window.location.origin);
+      let sessionId = null;
+      let score = 0; let rescued = 0; let timeLeft = 75; let finished = false;
+
+      async function startSession() {
+        try {
+          const resp = await fetch(API_BASE + '/api/drills/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ drillType: 'flood', duration: timeLeft, difficulty: 'medium' })
+          });
+          const json = await resp.json();
+          if (json && json.data) sessionId = json.data.sessionId;
+        } catch (e) { console.warn('start session failed', e); }
+      }
+
+      function toast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(()=>{ el.style.display='none'; }, 1500);
+      }
+
+      function addScore(delta, reason) {
+        score = Math.max(0, score + delta);
+        document.getElementById('score').textContent = score;
+        const fill = document.getElementById('progressFill');
+        fill.style.width = Math.min(100, score) + '%';
+        if (window.socket && sessionId) {
+          socket.emit('vr:score', { sessionId, scoreDelta: delta, reason });
+        }
+      }
+
+      async function submitResult() {
+        if (!sessionId) return;
+        const payload = {
+          drillType: 'flood',
+          score,
+          timeTaken: 75 - timeLeft,
+          totalTime: 75,
+          performance: { accuracy: Math.min(100, rescued*30), speed: 60, safety: 70, teamwork: 50, decisionMaking: 60 },
+          completedSteps: [ { stepId: 'higher-ground', stepName: 'Reached higher ground', completed: true, timeSpent: 10, score: 20 } ],
+          missedSteps: rescued >= 3 ? [] : [ { stepId: 'rescue-all', stepName: 'Rescue all NPCs', importance: 'important', impact: 'Lower preparedness score' } ],
+          metadata: { device: navigator.userAgent, platform: navigator.platform }
+        };
+        try {
+          const resp = await fetch(API_BASE + '/api/drills/' + sessionId + '/result', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+          });
+          const json = await resp.json();
+          console.log('Result saved', json);
+        } catch (e) { console.warn('submit failed', e); }
+      }
+
+      function completeDrill() {
+        submitResult();
+      }
+
+      // Rising water animation
+      function startWater() {
+        const water = document.getElementById('water');
+        let h = 0.2;
+        const interval = setInterval(()=>{
+          if (finished) { clearInterval(interval); return; }
+          h = Math.min(3.0, h + 0.02);
+          water.setAttribute('height', h.toFixed(2));
+          water.object3D.position.y = h/2;
+        }, 500);
+      }
+
+      function bindInteractions() {
+        // Pickups
+        document.querySelectorAll('.pickup').forEach(el=>{
+          el.addEventListener('click', ()=>{
+            addScore(10, 'pickup');
+            toast('Picked up item');
+            el.parentNode.removeChild(el);
+          });
+        });
+        // Rescue NPCs when clicked near higher ground
+        document.querySelectorAll('.npc').forEach(el=>{
+          el.addEventListener('click', ()=>{
+            const y = document.getElementById('water').object3D.position.y;
+            if (y > 0.8) { // simulate higher urgency
+              rescued += 1; document.getElementById('rescued').textContent = rescued;
+              addScore(15, 'rescue'); toast('NPC rescued');
+              el.parentNode.removeChild(el);
+              if (rescued >= 3) finish();
+            } else {
+              toast('Bring NPCs to higher ground');
+            }
+          });
+        });
+      }
+
+      function finish() {
+        if (finished) return; finished = true;
+        const done = document.getElementById('done');
+        document.getElementById('finalScore').textContent = score;
+        document.getElementById('finalTime').textContent = 75 - timeLeft;
+        done.style.display = 'block';
+      }
+
+      function startTimer() {
+        const t = document.getElementById('timer');
+        const intv = setInterval(()=>{
+          if (finished) { clearInterval(intv); return; }
+          timeLeft -= 1; t.textContent = timeLeft;
+          if (timeLeft <= 0) { clearInterval(intv); finish(); }
+        }, 1000);
+      }
+
+      // Optional multiplayer state sync
+      function initSocket() {
+        try {
+          const token = localStorage.getItem('token');
+          window.socket = io(API_BASE, { auth: { token } });
+          socket.on('connect', ()=>{ if (sessionId) socket.emit('vr:join', { sessionId }); });
+        } catch (e) { console.warn('socket init failed', e); }
+      }
+
+      window.addEventListener('load', async ()=>{
+        await startSession();
+        initSocket();
+        bindInteractions();
+        startWater();
+        startTimer();
+      });
+    </script>
+</body>
+</html>
+
+
