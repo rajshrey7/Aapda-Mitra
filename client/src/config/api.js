@@ -1,63 +1,66 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export const API_ENDPOINTS = {
   // Auth
-  LOGIN: `${API_BASE_URL}/api/users/login`,
-  REGISTER: `${API_BASE_URL}/api/users/register`,
-  PROFILE: `${API_BASE_URL}/api/users/profile`,
+  LOGIN: `/api/users/login`,
+  REGISTER: `/api/users/register`,
+  PROFILE: `/api/users/profile`,
   
   // Leaderboard
-  LEADERBOARD_GLOBAL: `${API_BASE_URL}/api/leaderboard/global`,
-  LEADERBOARD_SCHOOLS: `${API_BASE_URL}/api/leaderboard/schools`,
-  LEADERBOARD_USER: `${API_BASE_URL}/api/leaderboard/user`,
+  LEADERBOARD_GLOBAL: `/api/leaderboard/global`,
+  LEADERBOARD_SCHOOLS: `/api/leaderboard/schools`,
+  LEADERBOARD_USER: `/api/leaderboard/user`,
   
   // Games
-  GAMES_LIST: `${API_BASE_URL}/api/games/list`,
-  GAMES_CREATE: `${API_BASE_URL}/api/games/create`,
-  GAMES_JOIN: `${API_BASE_URL}/api/games/:id/join`,
-  GAMES_SCORE: `${API_BASE_URL}/api/games/:id/score`,
+  GAMES_LIST: `/api/games/list`,
+  GAMES_CREATE: `/api/games/create`,
+  GAMES_JOIN: `/api/games/:id/join`,
+  GAMES_SCORE: `/api/games/:id/score`,
   
   // Modules
-  MODULES_LIST: `${API_BASE_URL}/api/modules`,
-  MODULES_DETAIL: `${API_BASE_URL}/api/modules/:id`,
-  MODULES_COMPLETE: `${API_BASE_URL}/api/modules/:id/complete`,
+  MODULES_LIST: `/api/modules`,
+  MODULES_DETAIL: `/api/modules/:id`,
+  MODULES_COMPLETE: `/api/modules/:id/complete`,
   
   // Alerts (use active endpoint that exists on server)
-  ALERTS_CURRENT: `${API_BASE_URL}/api/alerts/active`,
-  ALERTS_BROADCAST: `${API_BASE_URL}/api/alerts/broadcast`,
+  ALERTS_CURRENT: `/api/alerts/active`,
+  ALERTS_BROADCAST: `/api/alerts/broadcast`,
   
   // Admin
-  ADMIN_DASHBOARD: `${API_BASE_URL}/api/admin/dashboard`,
-  ADMIN_EXPORT: `${API_BASE_URL}/api/admin/export`,
-  ADMIN_DRILLS_PARTICIPATION: `${API_BASE_URL}/api/admin/drills/participation`,
-  ADMIN_DRILLS_SCHEDULE: `${API_BASE_URL}/api/admin/drills/schedule`,
+  ADMIN_DASHBOARD: `/api/admin/dashboard`,
+  ADMIN_EXPORT: `/api/admin/export`,
+  ADMIN_DRILLS_PARTICIPATION: `/api/admin/drills/participation`,
+  ADMIN_DRILLS_SCHEDULE: `/api/admin/drills/schedule`,
   
   // Emergency
-  EMERGENCY_CONTACTS: `${API_BASE_URL}/api/emergency/contacts`,
-  EMERGENCY_BROADCAST: `${API_BASE_URL}/api/emergency/broadcast`,
+  EMERGENCY_CONTACTS: `/api/emergency/contacts`,
+  EMERGENCY_BROADCAST: `/api/emergency/broadcast`,
   
   // Chat
-  CHAT_MESSAGES: `${API_BASE_URL}/api/chat/messages`,
-  CHAT_ROOMS: `${API_BASE_URL}/api/chat/rooms`,
+  CHAT_MESSAGES: `/api/chat/messages`,
+  CHAT_ROOMS: `/api/chat/rooms`,
 
   // Drills (VR)
-  DRILLS_START: `${API_BASE_URL}/api/drills/start`,
-  DRILLS_RESULT: `${API_BASE_URL}/api/drills/:id/result`,
-  DRILLS_LEADERBOARD: `${API_BASE_URL}/api/drills/leaderboard`,
+  DRILLS_START: `/api/drills/start`,
+  DRILLS_RESULT: `/api/drills/:id/result`,
+  DRILLS_LEADERBOARD: `/api/drills/leaderboard`,
   
   // Health
-  HEALTH: `${API_BASE_URL}/api/health`
+  HEALTH: `/api/health`
 };
 
 // API Helper Functions
 export const apiRequest = async (url, options = {}) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('am_token') || localStorage.getItem('token');
+  
+  // Don't send token for quiz endpoints (they use optionalAuth)
+  const isQuizEndpoint = url.includes('/api/quiz') && !url.includes('/submit');
   
   const defaultOptions = {
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` })
+      ...(token && !isQuizEndpoint && { Authorization: `Bearer ${token}` })
     }
   };
 
@@ -116,6 +119,21 @@ export const api = {
   
   // Alerts
   getCurrentAlerts: () => apiRequest(API_ENDPOINTS.ALERTS_CURRENT),
+  
+  // Quiz
+  getQuizzes: (params) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiRequest(`/api/quiz${queryString ? `?${queryString}` : ''}`);
+  },
+  getQuiz: (id) => apiRequest(`/api/quiz/${id}`),
+  submitQuiz: (id, answers) => apiRequest(`/api/quiz/${id}/submit`, {
+    method: 'POST',
+    body: JSON.stringify(answers)
+  }),
+  generateQuiz: (data) => apiRequest(`/api/quiz/generate`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }),
   
   // Admin
   getDashboardData: () => apiRequest(API_ENDPOINTS.ADMIN_DASHBOARD),

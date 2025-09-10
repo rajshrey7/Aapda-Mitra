@@ -22,8 +22,8 @@ const questionSchema = new mongoose.Schema({
   },
   difficulty: {
     type: String,
-    enum: ['easy', 'medium', 'hard'],
-    default: 'medium'
+    enum: ['beginner', 'intermediate', 'advanced'],
+    default: 'intermediate'
   },
   media: {
     type: String,

@@ -23,6 +23,9 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [exportLoading, setExportLoading] = useState(false);
 
+  // Helper to safely round numbers
+  const safeRound = (num) => (Number.isFinite(num) ? Math.round(num) : 0);
+
   // Fetch dashboard data
   const fetchDashboardData = async () => {
     try {
@@ -33,13 +36,11 @@ const AdminDashboard = () => {
         setDashboardData(data.data);
         setError(null);
       } else {
-        // Use mock data if API fails or returns error
         setDashboardData(null);
         setError(null);
       }
     } catch (err) {
       console.error('Dashboard fetch error:', err);
-      // Use mock data as fallback
       setDashboardData(null);
       setError(null);
     } finally {
@@ -64,7 +65,6 @@ const AdminDashboard = () => {
       const response = await api.exportData(type, 'csv');
 
       if (response) {
-        // Create a blob from the response data
         const blob = new Blob([JSON.stringify(response, null, 2)], { type: 'application/json' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -87,7 +87,6 @@ const AdminDashboard = () => {
       const data = await api.scheduleDrill(drillData);
 
       if (data.status === 'success') {
-        // Refresh dashboard data
         fetchDashboardData();
       } else {
         setError(data.message || 'Failed to schedule drill');
@@ -123,7 +122,6 @@ const AdminDashboard = () => {
     );
   }
 
-  // Mock data for demonstration
   const mockDashboardData = {
     overview: {
       totalUsers: 1247,
@@ -171,7 +169,7 @@ const AdminDashboard = () => {
     {
       icon: UsersIcon,
       label: 'Total Users',
-      value: currentData.overview.totalUsers,
+      value: Number.isFinite(currentData.overview.totalUsers) ? currentData.overview.totalUsers : 0,
       color: 'blue',
       change: '+12%',
       trend: 'up'
@@ -179,7 +177,7 @@ const AdminDashboard = () => {
     {
       icon: AcademicCapIcon,
       label: 'Total Schools',
-      value: currentData.overview.totalSchools,
+      value: Number.isFinite(currentData.overview.totalSchools) ? currentData.overview.totalSchools : 0,
       color: 'green',
       change: '+3%',
       trend: 'up'
@@ -187,7 +185,7 @@ const AdminDashboard = () => {
     {
       icon: TrophyIcon,
       label: 'Drills Completed',
-      value: currentData.overview.totalDrillsCompleted,
+      value: Number.isFinite(currentData.overview.totalDrillsCompleted) ? currentData.overview.totalDrillsCompleted : 0,
       color: 'purple',
       change: '+25%',
       trend: 'up'
@@ -195,7 +193,7 @@ const AdminDashboard = () => {
     {
       icon: ChartBarIcon,
       label: 'Avg Score',
-      value: Math.round(currentData.overview.averageDrillScore),
+      value: safeRound(currentData.overview.averageDrillScore),
       color: 'yellow',
       change: '+8%',
       trend: 'up'
@@ -203,7 +201,7 @@ const AdminDashboard = () => {
     {
       icon: BellIcon,
       label: 'Games Played',
-      value: currentData.overview.totalGamesPlayed,
+      value: Number.isFinite(currentData.overview.totalGamesPlayed) ? currentData.overview.totalGamesPlayed : 0,
       color: 'indigo',
       change: '+18%',
       trend: 'up'
@@ -211,7 +209,7 @@ const AdminDashboard = () => {
     {
       icon: ExclamationTriangleIcon,
       label: 'Preparedness Score',
-      value: Math.round(currentData.overview.preparednessScore),
+      value: safeRound(currentData.overview.preparednessScore),
       color: 'red',
       change: '+5%',
       trend: 'up'
@@ -229,7 +227,6 @@ const AdminDashboard = () => {
             <h1 className="text-4xl font-bold text-gray-800">Admin Dashboard</h1>
             <p className="text-gray-600 mt-2">Monitor and manage the disaster preparedness platform</p>
           </div>
-          
           <div className="flex items-center space-x-4">
             <button
               onClick={() => fetchDashboardData()}
@@ -239,7 +236,7 @@ const AdminDashboard = () => {
               <span>Refresh</span>
             </button>
           </div>
-      </div>
+        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
@@ -252,8 +249,8 @@ const AdminDashboard = () => {
               className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
             >
               <div className="flex items-center justify-between">
-            <div>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value.toLocaleString()}</p>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                   <p className="text-gray-600 text-sm">{stat.label}</p>
                   <div className="flex items-center mt-1">
                     <span className="text-sm text-green-600 font-semibold">{stat.change}</span>
@@ -262,11 +259,14 @@ const AdminDashboard = () => {
                 </div>
                 <div className={`p-3 rounded-full bg-gradient-to-br from-${stat.color}-100 to-${stat.color}-200`}>
                   <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
-              </div>
+                </div>
               </div>
             </motion.div>
           ))}
-            </div>
+        </div>
+
+ 
+
 
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-lg mb-8">
@@ -302,40 +302,27 @@ const AdminDashboard = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">School Performance</h3>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={currentData.schoolStats}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                        <YAxis />
-                        <Tooltip 
-                          formatter={(value, name) => [value, name === 'avgScore' ? 'Average Score' : 'Students']}
-                        />
-                        <Bar dataKey="avgScore" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+  <BarChart data={currentData.schoolStats}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+    <YAxis />
+    <Tooltip
+      formatter={(value, name) => {
+        const safeValue = Number.isFinite(value) ? value : 0;
+        const label = name === 'avgScore' ? 'Average Score' : 'Students';
+        return [safeValue, label];
+      }}
+    />
+    <Bar dataKey="avgScore" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+  </BarChart>
+</ResponsiveContainer>
+
         </div>
 
                   {/* Drill Participation */}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Drill Participation</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={currentData.drillParticipation}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, completion }) => `${name}: ${completion}%`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="completion"
-                        >
-                          {currentData.drillParticipation.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    
                   </div>
                 </motion.div>
               )}
@@ -352,15 +339,29 @@ const AdminDashboard = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Trends</h3>
                     <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={currentData.performanceTrends}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="avgScore" stroke="#3B82F6" strokeWidth={3} />
-                        <Line type="monotone" dataKey="users" stroke="#10B981" strokeWidth={2} />
-                      </LineChart>
-                    </ResponsiveContainer>
+  <PieChart>
+    <Pie
+      data={currentData.drillParticipation}
+      cx="50%"
+      cy="50%"
+      labelLine={false}
+      label={({ name, completion }) =>
+        `${name}: ${Number.isFinite(completion) ? completion : 0}%`
+      }
+      outerRadius={80}
+      fill="#8884d8"
+      dataKey="completion"
+    >
+      {currentData.drillParticipation.map((entry, index) => (
+        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+      ))}
+    </Pie>
+    <Tooltip
+      formatter={(value) => [Number.isFinite(value) ? value : 0, 'Completion']}
+    />
+  </PieChart>
+</ResponsiveContainer>
+
                   </div>
 
                   {/* Recent Activity */}

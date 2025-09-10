@@ -40,7 +40,7 @@ const getQuizzes = async (req, res) => {
 
 // @desc    Get single quiz
 // @route   GET /api/quiz/:id
-// @access  Private
+// @access  Public
 const getQuiz = async (req, res) => {
   try {
     const quiz = await Quiz.findById(req.params.id)
@@ -377,10 +377,11 @@ const generateAIQuiz = async (req, res) => {
       questions: formattedQuestions,
       difficulty: difficulty || 'beginner',
       isAIGenerated: true,
-      createdBy: req.user._id,
-      region: req.user.region || 'Punjab',
+      createdBy: req.user ? req.user._id : null,   // ✅ safe
+      region: req.user?.region || 'Punjab',        // ✅ safe
       language: language || 'en'
     });
+    
 
     res.status(201).json({
       status: 'success',

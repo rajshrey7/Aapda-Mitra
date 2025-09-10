@@ -40,7 +40,9 @@ const AlertDropdown = () => {
         if (res?.status === 'success' && Array.isArray(res.data)) {
           setAlerts(res.data);
         }
-      } catch (_) {}
+      } catch (error) {
+        console.log('No alerts endpoint available:', error.message);
+      }
     })();
 
     return () => {
