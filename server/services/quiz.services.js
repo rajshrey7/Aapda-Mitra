@@ -19,7 +19,7 @@ export async function generateQuiz(topic, numQuestions) {
     const prompt = `
     ${quizPrompt}
 
-    Now, based on these instructions, please generate ${numQuestions} MCQs on the topic of ${topic}.
+    Now, based on these instructions, please generate ${15} MCQs on the topic of ${topic}.
   `;
 
     try {
