@@ -2,6 +2,7 @@
 // Live alerts component with AI summarization
 
 import React, { useState, useEffect } from 'react';
+import { api as apiClient } from '../config/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ExclamationTriangleIcon, 
@@ -15,6 +16,7 @@ const LiveAlerts = ({
   lat = 31.1471, 
   lon = 75.3412, 
   radius = 50,
+  location = '',
   autoRefresh = true,
   refreshInterval = 60000 
 }) => {
@@ -24,7 +26,7 @@ const LiveAlerts = ({
   const [summarizing, setSummarizing] = useState(new Set());
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // Fetch nearby alerts
+  // Fetch nearby alerts; fallback to WeatherAPI-backed endpoint when empty
   const fetchAlerts = async () => {
     try {
       setLoading(true);
@@ -34,7 +36,31 @@ const LiveAlerts = ({
       const data = await response.json();
 
       if (data.status === 'success') {
-        setAlerts(data.data.alerts || []);
+        let nextAlerts = data.data.alerts || [];
+
+        // Fallback: if no alerts and a location is provided, try weather endpoint
+        if ((!nextAlerts || nextAlerts.length === 0) && location) {
+          try {
+            const weather = await apiClient.checkWeatherAlert(location);
+            if (weather?.status === 'success' && weather?.data?.alerts?.length) {
+              // Normalize WeatherAPI alerts into our UI shape
+              nextAlerts = weather.data.alerts.map((a, idx) => ({
+                id: `${Date.now()}-${idx}`,
+                type: (a.event || 'weather').toLowerCase(),
+                severity: (a.severity || 'moderate').toLowerCase(),
+                title: a.headline || a.event || 'Weather Alert',
+                description: a.desc || a.description || 'Weather alert in your area',
+                location: location,
+                createdAt: a.effective || new Date().toISOString(),
+                source: 'WeatherAPI'
+              }));
+            }
+          } catch (e) {
+            // ignore fallback errors; keep previous error handling
+          }
+        }
+
+        setAlerts(nextAlerts);
         setLastUpdated(new Date());
         setError(null);
       } else {
