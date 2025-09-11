@@ -98,8 +98,8 @@ const chat = async (req, res) => {
       });
     }
 
-    // 4. Get the Gemini model
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+    // 4. Get the Gemini model (using flash model for better rate limits)
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Create system prompt (now called a system instruction for Gemini)
     const systemInstruction = `You are Aapda Mitra, an AI assistant specializing in disaster preparedness education for schools in Punjab, India. 
@@ -140,13 +140,27 @@ const chat = async (req, res) => {
   } catch (error) {
     console.error('Chat error:', error);
 
-    // Fallback to knowledge base on error
-    const response = generateKnowledgeBaseResponse(req.body.message);
+    // Check error type and provide appropriate fallback
+    let response;
+    if (error.message && error.message.includes('429')) {
+      console.log('Rate limit exceeded, using knowledge base fallback');
+      response = generateKnowledgeBaseResponse(req.body.message) + 
+        '\n\n⚠️ Note: AI service is temporarily unavailable due to high usage. This response is from our knowledge base.';
+    } else if (error.message && error.message.includes('API_KEY_INVALID')) {
+      console.log('Invalid API key, using knowledge base fallback');
+      response = generateKnowledgeBaseResponse(req.body.message) + 
+        '\n\n⚠️ Note: AI service configuration issue. This response is from our knowledge base.';
+    } else {
+      console.log('API error, using knowledge base fallback');
+      response = generateKnowledgeBaseResponse(req.body.message) + 
+        '\n\n⚠️ Note: AI service temporarily unavailable. This response is from our knowledge base.';
+    }
     res.json({
       status: 'success',
       data: {
         response,
-        isFromKnowledgeBase: true
+        isFromKnowledgeBase: true,
+        error: error.message || 'API temporarily unavailable'
       }
     });
   }
@@ -276,15 +290,17 @@ function generateKnowledgeBaseResponse(message) {
   }
 
   // Default response
-  return `I'm Aapda Mitra, your disaster preparedness assistant. I can help you with:
+  return `I'm Aapda Mitra, your disaster preparedness assistant for schools in Punjab, India. I can help you with:
   
-  1. 🏔️ Earthquake safety
-  2. 💧 Flood preparedness 
-  3. 🔥 Fire safety
-  4. 🏥 First aid basics
-  5. 📞 Emergency contacts
+  1. 🏔️ Earthquake safety and preparedness
+  2. 💧 Flood prevention and response
+  3. 🔥 Fire safety measures
+  4. 🏥 First aid procedures
+  5. 📞 Emergency contacts and planning
+  6. 🏫 School-specific emergency protocols
+  7. 🌪️ Region-specific disasters in Punjab
   
-  Please ask me about any specific disaster or safety topic you'd like to learn about!`;
+  Please ask me about any specific disaster or safety topic you'd like to learn about! I can provide detailed guidance for before, during, and after emergency situations.`;
 }
 
 module.exports = {

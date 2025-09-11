@@ -8,6 +8,9 @@ import About from "./pages/About";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import EmergencyContacts from "./pages/EmergencyContacts";
+import EmergencyKitBuilder from "./pages/EmergencyKitBuilder";
+import EmergencyCardSwap from "./pages/EmergencyCardSwap";
+import ChatPage from "./pages/ChatPage";
 import QuizList from "./pages/QuizList";
 import QuizPage from "./pages/QuizPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
@@ -19,6 +22,7 @@ import GamePlay from "./pages/GamePlay";
 import Modules from "./pages/Modules";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import FloatingChatIcon from "./components/FloatingChatIcon";
 // WeatherAlertBanner deprecated; using AlertDropdown in Navbar
 import gameSocketService from "./utils/gameSocket";
 
@@ -73,6 +77,9 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/emergency" element={<EmergencyContacts />} />
+              <Route path="/emergency-kit" element={<EmergencyKitBuilder />} />
+              <Route path="/emergency-card-swap" element={<EmergencyCardSwap />} />
+              <Route path="/chat" element={<ChatPage />} />
               <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/quizzes" element={<QuizList />} />
               <Route path="/modules" element={<Modules />} />
@@ -92,6 +99,7 @@ function App() {
           </AnimatePresence>
         </main>
         <Footer />
+        <FloatingChatIcon />
       </div>
     </AuthProvider>
   );

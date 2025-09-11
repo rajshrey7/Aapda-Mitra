@@ -211,7 +211,14 @@ const submitQuiz = async (req, res) => {
         userStats: {
           totalPoints: user.points,
           level: user.level
-        }
+        },
+        detailedResults: processedAnswers.map((answer, index) => ({
+          questionIndex: index,
+          question: quiz.questions[index],
+          userAnswer: answer.userAnswer,
+          isCorrect: answer.isCorrect,
+          pointsEarned: answer.pointsEarned
+        }))
       }
     });
   } catch (error) {
@@ -331,9 +338,8 @@ const generateAIQuiz = async (req, res) => {
       });
     }
 
-    // 4. Get the Gemini model
-    // Using gemini-1.5-flash-latest is efficient for this task
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    // 4. Get the Gemini model (using flash model for better rate limits)
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // 5. Define the JSON schema for reliable, structured output
     const schema = {
@@ -442,16 +448,28 @@ const generateAIQuiz = async (req, res) => {
     });
   } catch (error) {
     console.error('Generate AI quiz error:', error);
-    // Check if the error is from the Gemini API (e.g., content blocked)
+    
+    // Check for specific error types
     if (error.message.includes('response was blocked')) {
         return res.status(400).json({
             status: 'error',
             message: 'Quiz generation failed because the topic was deemed unsafe. Please try a different topic.'
         });
+    } else if (error.message.includes('API_KEY_INVALID')) {
+        return res.status(400).json({
+            status: 'error',
+            message: 'AI service configuration issue. Please contact administrator.'
+        });
+    } else if (error.message.includes('429')) {
+        return res.status(429).json({
+            status: 'error',
+            message: 'AI service is temporarily unavailable due to high usage. Please try again later.'
+        });
     }
+    
     res.status(500).json({
       status: 'error',
-      message: 'An error occurred while generating the AI quiz.'
+      message: 'An error occurred while generating the AI quiz. Please try again.'
     });
   }
 };
