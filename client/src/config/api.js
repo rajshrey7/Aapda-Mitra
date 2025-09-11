@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
   
   // Alerts (use active endpoint that exists on server)
   ALERTS_CURRENT: `/api/alerts/active`,
+  ALERTS_WEATHER: `/api/alerts/weather`,
   ALERTS_BROADCAST: `/api/alerts/broadcast`,
   
   // Admin
@@ -119,6 +120,10 @@ export const api = {
   
   // Alerts
   getCurrentAlerts: () => apiRequest(API_ENDPOINTS.ALERTS_CURRENT),
+  checkWeatherAlert: (location) => {
+    const q = new URLSearchParams({ location }).toString();
+    return apiRequest(`${API_ENDPOINTS.ALERTS_WEATHER}?${q}`);
+  },
   
   // Quiz
   getQuizzes: (params) => {

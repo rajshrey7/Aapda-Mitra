@@ -1,14 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../contexts/ThemeContext';
 import { FiMail, FiPhone, FiMapPin, FiGithub, FiTwitter, FiFacebook } from 'react-icons/fi';
 
 const Footer = () => {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-900 text-white mt-auto">
+    <footer className="bg-gray-900 dark:bg-gray-950 text-white mt-auto transition-colors duration-300">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About Section */}

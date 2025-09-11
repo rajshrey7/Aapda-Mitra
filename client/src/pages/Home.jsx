@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { 
   FiBookOpen, FiAward, FiUsers, FiAlertTriangle, 
   FiShield, FiTarget, FiTrendingUp, FiZap 
@@ -11,6 +12,7 @@ import {
 const Home = () => {
   const { t } = useTranslation();
   const { isAuthenticated, user } = useAuth();
+  const { isDark } = useTheme();
 
   const features = [
     {
@@ -36,6 +38,14 @@ const Home = () => {
       title: 'AI-Powered',
       description: 'Personalized learning with AI chatbot assistance',
       color: 'yellow'
+    },
+    {
+      icon: <FiAlertTriangle size={24} />,
+      title: 'Disaster Map',
+      description: 'Real-time calamity detection with safest escape routes',
+      color: 'red',
+      link: '/disaster-map',
+      badge: 'NEW'
     }
   ];
 
@@ -77,11 +87,11 @@ const Home = () => {
     >
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-10 dark:opacity-20"></div>
         <motion.div variants={itemVariants} className="container mx-auto px-4 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
             <motion.h1 
-              className="text-5xl md:text-6xl font-bold text-gray-800 mb-6"
+              className="text-5xl md:text-6xl font-bold text-gray-800 dark:text-gray-100 mb-6"
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5 }}
@@ -89,7 +99,7 @@ const Home = () => {
               {t('home.welcome')}
             </motion.h1>
             <motion.p 
-              className="text-xl text-gray-600 mb-8"
+              className="text-xl text-gray-600 dark:text-gray-300 mb-8"
               variants={itemVariants}
             >
               {t('home.subtitle')}
@@ -142,29 +152,65 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white dark:bg-gray-800 transition-colors duration-300">
         <motion.div variants={containerVariants} className="container mx-auto px-4">
           <motion.h2 
             variants={itemVariants}
-            className="text-3xl font-bold text-center text-gray-800 mb-12"
+            className="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-12"
           >
             Why Choose Aapda Mitra?
           </motion.h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                variants={itemVariants}
-                whileHover={{ scale: 1.05 }}
-                className="bg-gray-50 rounded-xl p-6 text-center hover:shadow-xl transition-all"
-              >
-                <div className={`w-16 h-16 mx-auto mb-4 bg-${feature.color}-100 text-${feature.color}-600 rounded-full flex items-center justify-center`}>
-                  {feature.icon}
+            {features.map((feature, index) => {
+              const FeatureContent = (
+                <motion.div
+                  variants={itemVariants}
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  className="bg-white dark:bg-gray-700 rounded-2xl p-6 text-center hover:shadow-2xl transition-all duration-300 cursor-pointer border border-gray-100 dark:border-gray-600 relative overflow-hidden group"
+                >
+                  {feature.badge && (
+                    <div className="absolute top-3 right-3">
+                      <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {feature.badge}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className={`w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-${feature.color}-100 to-${feature.color}-200 text-${feature.color}-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    {feature.icon}
+                  </div>
+                  
+                  <h3 className="text-xl font-bold mb-2 text-gray-800 dark:text-gray-100 group-hover:text-gray-900 dark:group-hover:text-gray-50 transition-colors">
+                    {feature.title}
+                  </h3>
+                  
+                  <p className="text-gray-600 dark:text-gray-300 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors leading-relaxed">
+                    {feature.description}
+                  </p>
+                  
+                  {feature.link && (
+                    <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400">
+                        Explore Now
+                        <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              );
+
+              return feature.link ? (
+                <Link key={index} to={feature.link}>
+                  {FeatureContent}
+                </Link>
+              ) : (
+                <div key={index}>
+                  {FeatureContent}
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </motion.div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       </section>
@@ -201,10 +247,10 @@ const Home = () => {
             variants={itemVariants}
             className="container mx-auto px-4 text-center"
           >
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+            <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
               Ready to Make Your School Disaster-Ready?
             </h2>
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
               Join thousands of students and teachers preparing for emergencies through gamified learning
             </p>
             <Link

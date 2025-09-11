@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import './styles/global.css';
+import './styles/dark-mode.css';
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -8,6 +10,14 @@ import About from "./pages/About";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import EmergencyContacts from "./pages/EmergencyContacts";
+import EmergencyKitBuilder from "./pages/EmergencyKitBuilder";
+import EmergencyCardSwap from "./pages/EmergencyCardSwap";
+import ChatPage from "./pages/ChatPage";
+import DisasterMap from "./components/DisasterMap";
+import MapTest from "./components/MapTest";
+import SimpleMapTest from "./components/SimpleMapTest";
+import MapTestSuite from "./components/MapTestSuite";
+import ErrorBoundary from "./components/ErrorBoundary";
 import QuizList from "./pages/QuizList";
 import QuizPage from "./pages/QuizPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
@@ -18,7 +28,9 @@ import Lobby from "./pages/Lobby";
 import GamePlay from "./pages/GamePlay";
 import Modules from "./pages/Modules";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import FloatingChatIcon from "./components/FloatingChatIcon";
 // WeatherAlertBanner deprecated; using AlertDropdown in Navbar
 import gameSocketService from "./utils/gameSocket";
 
@@ -62,38 +74,48 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-        <Navbar />
-        <main className="container mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/emergency" element={<EmergencyContacts />} />
-              <Route path="/leaderboard" element={<LeaderboardPage />} />
-              <Route path="/quizzes" element={<QuizList />} />
-              <Route path="/modules" element={<Modules />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 transition-colors duration-300">
+          <Navbar />
+          <main className="container mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
+            <AnimatePresence mode="wait">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/emergency" element={<EmergencyContacts />} />
+                <Route path="/emergency-kit" element={<EmergencyKitBuilder />} />
+                <Route path="/emergency-card-swap" element={<EmergencyCardSwap />} />
+                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/disaster-map" element={<ErrorBoundary><DisasterMap /></ErrorBoundary>} />
+                <Route path="/map-test" element={<MapTest />} />
+                <Route path="/simple-map" element={<SimpleMapTest />} />
+                <Route path="/map-tests" element={<MapTestSuite />} />
+                <Route path="/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/quizzes" element={<QuizList />} />
+                <Route path="/modules" element={<Modules />} />
 
-              {/* Protected Routes */}
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/quiz/:id" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
-              <Route path="/drills" element={<ProtectedRoute><DrillsPage /></ProtectedRoute>} />
-              <Route path="/game/lobby" element={<ProtectedRoute><Lobby /></ProtectedRoute>} />
-              <Route path="/game/play/:sessionId" element={<ProtectedRoute><GamePlay /></ProtectedRoute>} />
-              <Route path="/modules/:id" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
-              <Route path="/admin/*" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+                {/* Protected Routes */}
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/quiz/:id" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
+                <Route path="/drills" element={<ProtectedRoute><DrillsPage /></ProtectedRoute>} />
+                <Route path="/game/lobby" element={<ProtectedRoute><Lobby /></ProtectedRoute>} />
+                <Route path="/game/play/:sessionId" element={<ProtectedRoute><GamePlay /></ProtectedRoute>} />
+                <Route path="/modules/:id" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
+                <Route path="/admin/*" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </AnimatePresence>
-        </main>
-        <Footer />
-      </div>
-    </AuthProvider>
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </AnimatePresence>
+          </main>
+          <Footer />
+          <FloatingChatIcon />
+        </div>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

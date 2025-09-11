@@ -8,6 +8,38 @@ const { protect, admin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+// Check alerts from WeatherAPI by location (uses services/alert.services.js)
+router.get('/weather', async (req, res) => {
+  try {
+    const { location } = req.query;
+
+    if (!location || !location.trim()) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Query parameter "location" is required'
+      });
+    }
+
+    // Use CommonJS service
+    const { checkWeatherAlert } = require('../services/alert.services');
+    const result = await checkWeatherAlert(location.trim());
+
+    return res.json({
+      status: 'success',
+      data: {
+        isAlert: Boolean(result?.isAlert),
+        alerts: Array.isArray(result?.alert) ? result.alert : []
+      }
+    });
+  } catch (error) {
+    console.error('WeatherAPI alert check error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to check weather alerts'
+    });
+  }
+});
+
 // Get nearby alerts
 router.get('/nearby', async (req, res) => {
   try {

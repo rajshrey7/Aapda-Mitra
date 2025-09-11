@@ -38,8 +38,22 @@ function initialize(io) {
     }
   });
 
+  // Store online users for chat
+  const onlineUsers = new Map();
+
   io.on('connection', (socket) => {
     console.log(`User ${socket.user.name} connected with socket ${socket.id}`);
+
+    // Add user to online users
+    onlineUsers.set(socket.user.id, {
+      id: socket.user.id,
+      name: socket.user.name,
+      role: socket.user.role,
+      school: socket.user.school,
+      region: socket.user.region,
+      socketId: socket.id,
+      joinedAt: new Date()
+    });
 
     // Join user to their school room
     socket.join(`school:${socket.user.school}`);
@@ -56,10 +70,22 @@ function initialize(io) {
     socket.join('lobby');
     socket.join(`user:${socket.user.id}`);
 
+    // Join global chat room
+    socket.join('global-chat');
+
     // Admin users join admin room
     if (socket.user.role === 'admin') {
       socket.join('admin');
     }
+
+    // Notify all users about new user joining
+    socket.broadcast.emit('userJoined', {
+      user: socket.user,
+      onlineUsers: Array.from(onlineUsers.values())
+    });
+
+    // Send current online users to the new user
+    socket.emit('onlineUsers', Array.from(onlineUsers.values()));
 
     // Chat room management
     socket.on('joinRoom', (roomId) => {
@@ -75,6 +101,44 @@ function initialize(io) {
       socket.to(`chat:${roomId}`).emit('user:left', {
         user: socket.user,
         timestamp: new Date()
+      });
+    });
+
+    // Global chat messaging
+    socket.on('sendMessage', async (data) => {
+      try {
+        const { message, type = 'text' } = data;
+        
+        const chatMessage = {
+          id: Date.now().toString(),
+          user: socket.user,
+          message,
+          type,
+          timestamp: new Date()
+        };
+
+        // Broadcast to global chat
+        io.to('global-chat').emit('newMessage', chatMessage);
+        
+        // Store message (in production, save to database)
+        console.log(`Global chat message:`, chatMessage);
+      } catch (error) {
+        console.error('Chat message error:', error);
+        socket.emit('error', { message: 'Failed to send message' });
+      }
+    });
+
+    // Typing indicators
+    socket.on('typing', () => {
+      socket.broadcast.to('global-chat').emit('typing', {
+        userId: socket.user.id,
+        userName: socket.user.name
+      });
+    });
+
+    socket.on('stopTyping', () => {
+      socket.broadcast.to('global-chat').emit('stopTyping', {
+        userId: socket.user.id
       });
     });
 
@@ -420,6 +484,15 @@ function initialize(io) {
     // Handle disconnection
     socket.on('disconnect', () => {
       console.log(`User ${socket.user.name} disconnected`);
+      
+      // Remove user from online users
+      onlineUsers.delete(socket.user.id);
+      
+      // Notify other users about user leaving
+      socket.broadcast.emit('userLeft', {
+        user: socket.user,
+        onlineUsers: Array.from(onlineUsers.values())
+      });
       
       // Leave all rooms
       socket.leaveAll();

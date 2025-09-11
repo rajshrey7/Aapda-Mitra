@@ -2,6 +2,7 @@
 // Live alerts component with AI summarization
 
 import React, { useState, useEffect } from 'react';
+import { api as apiClient } from '../config/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ExclamationTriangleIcon, 
@@ -10,11 +11,13 @@ import {
   SparklesIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/solid';
+import CriticalAlertBanner from './CriticalAlertBanner';
 
 const LiveAlerts = ({ 
   lat = 31.1471, 
   lon = 75.3412, 
   radius = 50,
+  location = '',
   autoRefresh = true,
   refreshInterval = 60000 
 }) => {
@@ -23,8 +26,11 @@ const LiveAlerts = ({
   const [error, setError] = useState(null);
   const [summarizing, setSummarizing] = useState(new Set());
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [expandedIds, setExpandedIds] = useState(new Set());
+  const [readIds, setReadIds] = useState(new Set());
+  const [stickyCritical, setStickyCritical] = useState(null);
 
-  // Fetch nearby alerts
+  // Fetch nearby alerts; fallback to WeatherAPI-backed endpoint when empty
   const fetchAlerts = async () => {
     try {
       setLoading(true);
@@ -34,7 +40,44 @@ const LiveAlerts = ({
       const data = await response.json();
 
       if (data.status === 'success') {
-        setAlerts(data.data.alerts || []);
+        let nextAlerts = data.data.alerts || [];
+
+        // Fallback: if no alerts and a location is provided, try weather endpoint
+        if ((!nextAlerts || nextAlerts.length === 0) && location) {
+          try {
+            const weather = await apiClient.checkWeatherAlert(location);
+            if (weather?.status === 'success' && weather?.data?.alerts?.length) {
+              // Normalize WeatherAPI alerts into our UI shape
+              nextAlerts = weather.data.alerts.map((a, idx) => ({
+                id: `${Date.now()}-${idx}`,
+                type: (a.event || 'weather').toLowerCase(),
+                severity: (a.severity || 'moderate').toLowerCase(),
+                title: a.headline || a.event || 'Weather Alert',
+                description: a.desc || a.description || 'Weather alert in your area',
+                location: location,
+                createdAt: a.effective || new Date().toISOString(),
+                source: 'WeatherAPI'
+              }));
+            }
+          } catch (e) {
+            // ignore fallback errors; keep previous error handling
+          }
+        }
+
+        // Sort by severity priority then recency
+        const priority = { critical: 3, high: 2, moderate: 1, low: 0 };
+        nextAlerts = (nextAlerts || []).sort((a, b) => {
+          const pa = priority[(a.severity || '').toLowerCase()] ?? 0;
+          const pb = priority[(b.severity || '').toLowerCase()] ?? 0;
+          if (pb !== pa) return pb - pa;
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        });
+
+        setAlerts(nextAlerts);
+
+        // Show sticky for first critical/high
+        const sticky = nextAlerts.find(x => ['critical','high'].includes((x.severity||'').toLowerCase()));
+        setStickyCritical(sticky || null);
         setLastUpdated(new Date());
         setError(null);
       } else {
@@ -86,6 +129,18 @@ const LiveAlerts = ({
     }
   };
 
+  const toggleExpand = (id) => {
+    setExpandedIds(prev => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id); else s.add(id);
+      return s;
+    });
+  };
+
+  const markRead = (id) => {
+    setReadIds(prev => new Set([...prev, id]));
+  };
+
   // Initial load
   useEffect(() => {
     fetchAlerts();
@@ -105,9 +160,9 @@ const LiveAlerts = ({
   const getSeverityColor = (severity) => {
     switch (severity) {
       case 'critical':
-        return 'bg-red-500 text-white';
+        return 'bg-red-500 text-white animate-[pulse_1.6s_ease-in-out_infinite]';
       case 'high':
-        return 'bg-orange-500 text-white';
+        return 'bg-orange-500 text-white animate-[pulse_2s_ease-in-out_infinite]';
       case 'moderate':
         return 'bg-yellow-500 text-black';
       case 'low':
@@ -176,6 +231,17 @@ const LiveAlerts = ({
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
+      {/* Sticky critical banner */}
+      {stickyCritical && (
+        <div className="mb-4 -mt-4 -mx-6">
+          <CriticalAlertBanner
+            alert={stickyCritical}
+            onDismiss={() => setStickyCritical(null)}
+            enableSound={true}
+            enableVibration={true}
+          />
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
@@ -224,11 +290,14 @@ const LiveAlerts = ({
           {alerts.map((alert, index) => (
             <motion.div
               key={alert.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+              transition={{ duration: 0.25, delay: Math.min(index * 0.06, 0.3) }}
+              className={`border rounded-lg p-4 transition-all ${readIds.has(alert.id) ? 'opacity-70' : 'opacity-100'} ${['critical','high'].includes((alert.severity||'').toLowerCase()) ? 'shadow-[0_0_0_2px_rgba(244,67,54,0.15)]' : 'border-gray-200'} hover:shadow-md hover:-translate-y-0.5`}
+              style={{
+                boxShadow: ['critical','high'].includes((alert.severity||'').toLowerCase()) ? '0 0 12px rgba(244,67,54,0.25)' : undefined
+              }}
             >
               {/* Alert Header */}
               <div className="flex items-start justify-between mb-3">
@@ -257,7 +326,7 @@ const LiveAlerts = ({
               </div>
 
               {/* Alert Description */}
-              <p className="text-gray-700 text-sm mb-3">{alert.description}</p>
+              <p className="text-gray-700 text-sm mb-3 line-clamp-2">{alert.description}</p>
 
               {/* Location */}
               {alert.location && (
@@ -267,8 +336,28 @@ const LiveAlerts = ({
                 </div>
               )}
 
-              {/* AI Summary */}
+              {/* Expand / Collapse & AI Summary */}
               <div className="mt-3">
+                <div className="flex items-center gap-3 mb-2">
+                  <button
+                    onClick={() => toggleExpand(alert.id)}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    {expandedIds.has(alert.id) ? 'Hide details' : 'View details'}
+                  </button>
+                  <button
+                    onClick={() => markRead(alert.id)}
+                    className="text-gray-500 hover:text-gray-800 text-xs"
+                  >
+                    Mark as read
+                  </button>
+                </div>
+
+                {expandedIds.has(alert.id) && (
+                  <div className="mb-3 text-sm text-gray-700">
+                    {alert.details || alert.longDescription || 'Stay alert and follow local authority guidance.'}
+                  </div>
+                )}
                 {alert.aiSummary ? (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <div className="flex items-center space-x-2 mb-2">
