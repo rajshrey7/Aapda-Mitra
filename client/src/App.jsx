@@ -19,6 +19,7 @@ import SimpleMapTest from "./components/SimpleMapTest";
 import MapTestSuite from "./components/MapTestSuite";
 import MapTestComponent from "./components/MapTest";
 import SimpleAlertMap from "./components/SimpleAlertMap";
+import LearningModule from "./components/LearningModule";
 import ErrorBoundary from "./components/ErrorBoundary";
 import QuizList from "./pages/QuizList";
 import QuizPage from "./pages/QuizPage";
@@ -133,6 +134,10 @@ function App() {
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/quizzes" element={<QuizList />} />
                 <Route path="/modules" element={<Modules />} />
+                <Route path="/learn/earthquake" element={<LearningModule isOpen={true} onClose={() => window.history.back()} moduleType="earthquake" />} />
+                <Route path="/learn/fire" element={<LearningModule isOpen={true} onClose={() => window.history.back()} moduleType="fire" />} />
+                <Route path="/learn/thunderstorm" element={<LearningModule isOpen={true} onClose={() => window.history.back()} moduleType="thunderstorm" />} />
+                <Route path="/learn/heatwave" element={<LearningModule isOpen={true} onClose={() => window.history.back()} moduleType="heatwave" />} />
 
                 {/* Protected Routes */}
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

@@ -13,6 +13,7 @@ import {
   EyeIcon
 } from '@heroicons/react/24/solid';
 import LeaderboardRealtime from '../components/LeaderboardRealtime';
+import LearningModulesSection from '../components/LearningModulesSection';
 import LiveAlerts from '../components/LiveAlerts';
 import gameSocketService from '../utils/gameSocket';
 import { useAuth } from '../contexts/AuthContext';
@@ -326,28 +327,8 @@ const Lobby = () => {
               </div>
             </div>
 
-            {/* Education Modules */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Education Modules</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {modules.map((module) => (
-                  <motion.div
-                    key={module._id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => window.location.href = `/modules/${module._id}`}
-                  >
-                    <h3 className="font-semibold text-gray-900 mb-2">{module.title}</h3>
-                    <p className="text-sm text-gray-600 mb-3">{module.shortDescription}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-500">{module.category}</span>
-                      <span className="text-xs text-blue-600">{module.lessons.length} lessons</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
+            {/* Interactive Learning Modules */}
+            <LearningModulesSection />
           </div>
 
           {/* Sidebar */}
