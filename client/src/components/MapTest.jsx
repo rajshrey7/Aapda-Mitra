@@ -19,7 +19,7 @@ const MapTest = () => {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCKTTfJD5_TERQvfVR-XimF7c2GJnBekC8&libraries=places,geometry&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCKTTfJD5_TERQvfVR-XimF7c2GJnBekC8&libraries=places,geometry,marker&loading=async`;
     script.async = true;
     script.defer = true;
     
@@ -39,28 +39,73 @@ const MapTest = () => {
           center: testCoords,
           zoom: 14,
           mapTypeControl: true,
+          mapId: 'DEMO_MAP_ID', // Add Map ID for Advanced Markers
           streetViewControl: true,
           fullscreenControl: true,
           mapTypeId: 'roadmap'
         });
 
-        // Add marker
-        const marker = new window.google.maps.Marker({
-          position: testCoords,
-          map: map,
-          title: 'Test Location - Delhi',
-          icon: {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-              <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="20" cy="20" r="18" fill="#ef4444" stroke="#ffffff" stroke-width="3"/>
-                <path d="M20 8L24 16H16L20 8Z" fill="#ffffff"/>
-                <circle cx="20" cy="20" r="6" fill="#ffffff"/>
-              </svg>
-            `),
-            scaledSize: new window.google.maps.Size(40, 40),
-            anchor: new window.google.maps.Point(20, 20)
-          }
-        });
+        // Add marker using AdvancedMarkerElement
+        const markerContent = document.createElement('div');
+        markerContent.innerHTML = `
+          <div style="
+            width: 40px; 
+            height: 40px; 
+            background: #ef4444; 
+            border: 3px solid #ffffff; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            position: relative;
+          ">
+            <div style="
+              width: 0; 
+              height: 0; 
+              border-left: 8px solid transparent; 
+              border-right: 8px solid transparent; 
+              border-bottom: 12px solid #ffffff;
+              transform: translateY(-3px);
+            "></div>
+            <div style="
+              position: absolute;
+              width: 12px;
+              height: 12px;
+              background: #ffffff;
+              border-radius: 50%;
+            "></div>
+          </div>
+        `;
+
+        // Check if AdvancedMarkerElement is available, fallback to regular Marker
+        let marker;
+        if (window.google?.maps?.marker?.AdvancedMarkerElement) {
+          marker = new window.google.maps.marker.AdvancedMarkerElement({
+            position: testCoords,
+            map: map,
+            title: 'Test Location - Delhi',
+            content: markerContent
+          });
+        } else {
+          // Fallback to regular Marker with custom icon
+          marker = new window.google.maps.Marker({
+            position: testCoords,
+            map: map,
+            title: 'Test Location - Delhi',
+            icon: {
+              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="20" cy="20" r="18" fill="#ef4444" stroke="#ffffff" stroke-width="3"/>
+                  <path d="M20 8L24 16H16L20 8Z" fill="#ffffff"/>
+                  <circle cx="20" cy="20" r="6" fill="#ffffff"/>
+                </svg>
+              `),
+              scaledSize: new window.google.maps.Size(40, 40),
+              anchor: new window.google.maps.Point(20, 20)
+            }
+          });
+        }
 
         console.log('Test map created successfully');
         console.log('Map center:', map.getCenter()?.toJSON());

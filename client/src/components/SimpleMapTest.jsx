@@ -11,7 +11,8 @@ const SimpleMapTest = () => {
         try {
           new window.google.maps.Map(mapRef.current, {
             center: { lat: 28.6139, lng: 77.2090 },
-            zoom: 10
+            zoom: 10,
+            mapId: 'DEMO_MAP_ID' // Add Map ID for Advanced Markers
           });
           setMapLoaded(true);
           console.log('Simple map loaded successfully');

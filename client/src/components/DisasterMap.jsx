@@ -77,7 +77,7 @@ const DisasterMap = () => {
 
     console.log('DisasterMap: Loading Google Maps script...');
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places,geometry&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places,geometry,marker&loading=async`;
     script.async = true;
     script.defer = true;
     
@@ -135,6 +135,7 @@ const DisasterMap = () => {
           streetViewControl: true,
           fullscreenControl: true,
           mapTypeId: 'roadmap',
+          mapId: 'DEMO_MAP_ID', // Add Map ID for Advanced Markers
           styles: isDark ? [
             { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
             { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
@@ -271,30 +272,101 @@ const DisasterMap = () => {
   };
 
   const addUserMarker = (location) => {
-    const marker = new window.google.maps.Marker({
-      position: location,
-      map: map,
-      title: 'Your Location',
-      icon: {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <!-- Pulsing ring -->
-            <circle cx="20" cy="20" r="18" fill="none" stroke="#3b82f6" stroke-width="2" opacity="0.6">
-              <animate attributeName="r" values="18;24;18" dur="3s" repeatCount="indefinite"/>
-              <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/>
-            </circle>
-            <!-- Main marker -->
-            <circle cx="20" cy="20" r="14" fill="#3b82f6" stroke="white" stroke-width="3"/>
-            <circle cx="20" cy="20" r="8" fill="white"/>
-            <!-- Center dot -->
-            <circle cx="20" cy="20" r="3" fill="#3b82f6"/>
-          </svg>
-        `),
-        scaledSize: new window.google.maps.Size(40, 40),
-        anchor: new window.google.maps.Point(20, 20)
-      },
-      animation: window.google.maps.Animation.BOUNCE
-    });
+    // Create marker content element
+    const markerContent = document.createElement('div');
+    markerContent.innerHTML = `
+      <div style="
+        width: 40px; 
+        height: 40px; 
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <!-- Pulsing ring -->
+        <div style="
+          position: absolute;
+          width: 36px;
+          height: 36px;
+          border: 2px solid #3b82f6;
+          border-radius: 50%;
+          opacity: 0.6;
+          animation: pulse 3s infinite;
+        "></div>
+        <!-- Main marker -->
+        <div style="
+          width: 28px;
+          height: 28px;
+          background: #3b82f6;
+          border: 3px solid white;
+          border-radius: 50%;
+          position: relative;
+          z-index: 1;
+        ">
+          <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+          "></div>
+          <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background: #3b82f6;
+            border-radius: 50%;
+          "></div>
+        </div>
+      </div>
+      <style>
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 0.6; }
+          50% { transform: scale(1.3); opacity: 0.2; }
+          100% { transform: scale(1); opacity: 0.6; }
+        }
+      </style>
+    `;
+
+    // Check if AdvancedMarkerElement is available, fallback to regular Marker
+    let marker;
+    if (window.google?.maps?.marker?.AdvancedMarkerElement) {
+      marker = new window.google.maps.marker.AdvancedMarkerElement({
+        position: location,
+        map: map,
+        title: 'Your Location',
+        content: markerContent
+      });
+    } else {
+      // Fallback to regular Marker with custom icon
+      marker = new window.google.maps.Marker({
+        position: location,
+        map: map,
+        title: 'Your Location',
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="18" fill="none" stroke="#3b82f6" stroke-width="2" opacity="0.6">
+                <animate attributeName="r" values="18;24;18" dur="3s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/>
+              </circle>
+              <circle cx="20" cy="20" r="14" fill="#3b82f6" stroke="white" stroke-width="3"/>
+              <circle cx="20" cy="20" r="8" fill="white"/>
+              <circle cx="20" cy="20" r="3" fill="#3b82f6"/>
+            </svg>
+          `),
+          scaledSize: new window.google.maps.Size(40, 40),
+          anchor: new window.google.maps.Point(20, 20)
+        },
+        animation: window.google.maps.Animation.BOUNCE
+      });
+    }
     markersRef.current.push(marker);
   };
 
@@ -403,32 +475,105 @@ const DisasterMap = () => {
     calamities.forEach((calamity, index) => {
       const calamityInfo = calamityTypes[calamity.type];
       
-      // Create animated marker with pulsing effect
-      const marker = new window.google.maps.Marker({
-        position: calamity.position,
-        map: map,
-        title: `${calamityInfo.name} - ${calamity.severity} severity`,
-        icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
-              <!-- Pulsing ring -->
-              <circle cx="25" cy="25" r="22" fill="none" stroke="${calamityInfo.color}" stroke-width="2" opacity="0.6">
-                <animate attributeName="r" values="22;28;22" dur="2s" repeatCount="indefinite"/>
-                <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite"/>
-              </circle>
-              <!-- Main marker -->
-              <circle cx="25" cy="25" r="18" fill="${calamityInfo.color}" stroke="white" stroke-width="3"/>
-              <text x="25" y="31" text-anchor="middle" font-size="18" fill="white" font-weight="bold">${calamityInfo.icon}</text>
-              <!-- Severity indicator -->
-              <circle cx="35" cy="15" r="8" fill="white" stroke="${calamityInfo.color}" stroke-width="2"/>
-              <text x="35" y="19" text-anchor="middle" font-size="10" fill="${calamityInfo.color}" font-weight="bold">${calamity.severity.charAt(0).toUpperCase()}</text>
-            </svg>
-          `),
-          scaledSize: new window.google.maps.Size(50, 50),
-          anchor: new window.google.maps.Point(25, 25)
-        },
-        animation: window.google.maps.Animation.DROP
-      });
+      // Create animated marker with pulsing effect using AdvancedMarkerElement
+      const markerContent = document.createElement('div');
+      markerContent.innerHTML = `
+        <div style="
+          width: 50px; 
+          height: 50px; 
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <!-- Pulsing ring -->
+          <div style="
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            border: 2px solid ${calamityInfo.color};
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: calamityPulse 2s infinite;
+          "></div>
+          <!-- Main marker -->
+          <div style="
+            width: 36px;
+            height: 36px;
+            background: ${calamityInfo.color};
+            border: 3px solid white;
+            border-radius: 50%;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+          ">${calamityInfo.icon}</div>
+          <!-- Severity indicator -->
+          <div style="
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 2px solid ${calamityInfo.color};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: ${calamityInfo.color};
+            z-index: 2;
+          ">${calamity.severity.charAt(0).toUpperCase()}</div>
+        </div>
+        <style>
+          @keyframes calamityPulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 0.2; }
+            100% { transform: scale(1); opacity: 0.6; }
+          }
+        </style>
+      `;
+
+      // Check if AdvancedMarkerElement is available, fallback to regular Marker
+      let marker;
+      if (window.google?.maps?.marker?.AdvancedMarkerElement) {
+        marker = new window.google.maps.marker.AdvancedMarkerElement({
+          position: calamity.position,
+          map: map,
+          title: `${calamityInfo.name} - ${calamity.severity} severity`,
+          content: markerContent
+        });
+      } else {
+        // Fallback to regular Marker with custom icon
+        marker = new window.google.maps.Marker({
+          position: calamity.position,
+          map: map,
+          title: `${calamityInfo.name} - ${calamity.severity} severity`,
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="25" cy="25" r="22" fill="none" stroke="${calamityInfo.color}" stroke-width="2" opacity="0.6">
+                  <animate attributeName="r" values="22;28;22" dur="2s" repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="25" cy="25" r="18" fill="${calamityInfo.color}" stroke="white" stroke-width="3"/>
+                <text x="25" y="31" text-anchor="middle" font-size="18" fill="white" font-weight="bold">${calamityInfo.icon}</text>
+                <circle cx="35" cy="15" r="8" fill="white" stroke="${calamityInfo.color}" stroke-width="2"/>
+                <text x="35" y="19" text-anchor="middle" font-size="10" fill="${calamityInfo.color}" font-weight="bold">${calamity.severity.charAt(0).toUpperCase()}</text>
+              </svg>
+            `),
+            scaledSize: new window.google.maps.Size(50, 50),
+            anchor: new window.google.maps.Point(25, 25)
+          },
+          animation: window.google.maps.Animation.DROP
+        });
+      }
 
       const infoWindow = new window.google.maps.InfoWindow({
         content: `

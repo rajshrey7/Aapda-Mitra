@@ -25,7 +25,7 @@ const GoogleMapsComponent = ({
 
     // Load Google Maps script
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places,marker`;
     script.async = true;
     script.defer = true;
     
@@ -53,6 +53,7 @@ const GoogleMapsComponent = ({
         center,
         zoom,
         mapTypeControl: true,
+        mapId: 'DEMO_MAP_ID', // Add Map ID for Advanced Markers
         streetViewControl: true,
         fullscreenControl: true,
         ...mapOptions
@@ -77,12 +78,58 @@ const GoogleMapsComponent = ({
       markersRef.current = [];
 
       markers.forEach((markerData) => {
-        const marker = new window.google.maps.Marker({
-          position: markerData.position,
-          map: map,
-          title: markerData.title || '',
-          icon: markerData.icon || null
-        });
+        // Create marker content element
+        const markerContent = document.createElement('div');
+        markerContent.innerHTML = `
+          <div style="
+            width: 30px; 
+            height: 30px; 
+            background: #3b82f6; 
+            border: 2px solid #ffffff; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          ">
+            <div style="
+              width: 0; 
+              height: 0; 
+              border-left: 6px solid transparent; 
+              border-right: 6px solid transparent; 
+              border-bottom: 8px solid #ffffff;
+              transform: translateY(-2px);
+            "></div>
+          </div>
+        `;
+
+        // Check if AdvancedMarkerElement is available, fallback to regular Marker
+        let marker;
+        if (window.google?.maps?.marker?.AdvancedMarkerElement) {
+          marker = new window.google.maps.marker.AdvancedMarkerElement({
+            position: markerData.position,
+            map: map,
+            title: markerData.title || '',
+            content: markerContent
+          });
+        } else {
+          // Fallback to regular Marker with custom icon
+          marker = new window.google.maps.Marker({
+            position: markerData.position,
+            map: map,
+            title: markerData.title || '',
+            icon: {
+              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="15" cy="15" r="12" fill="#3b82f6" stroke="#ffffff" stroke-width="2"/>
+                  <path d="M15 6L18 12H12L15 6Z" fill="#ffffff"/>
+                </svg>
+              `),
+              scaledSize: new window.google.maps.Size(30, 30),
+              anchor: new window.google.maps.Point(15, 15)
+            }
+          });
+        }
 
         if (markerData.infoWindow) {
           const infoWindow = new window.google.maps.InfoWindow({

@@ -8,6 +8,36 @@ const LearningModule = ({ isOpen, onClose, moduleType }) => {
   const [completed, setCompleted] = useState(false);
   const [answers, setAnswers] = useState({});
   const [showCertificate, setShowCertificate] = useState(false);
+  const [dynamicContent, setDynamicContent] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch dynamic content when module opens
+  useEffect(() => {
+    if (isOpen && moduleType) {
+      fetchDynamicContent();
+    }
+  }, [isOpen, moduleType]);
+
+  const fetchDynamicContent = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/learning-modules/content/${moduleType}?ageGroup=8-16`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch content');
+      }
+      const content = await response.json();
+      setDynamicContent(content);
+    } catch (err) {
+      console.error('Error fetching dynamic content:', err);
+      setError(err.message);
+      // Fallback to static content
+      setDynamicContent(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const moduleData = {
     earthquake: {
@@ -416,7 +446,89 @@ const LearningModule = ({ isOpen, onClose, moduleType }) => {
     }
   };
 
-  const currentModule = moduleData[moduleType] || moduleData.earthquake;
+  // Get current content (dynamic or static)
+  const getCurrentContent = () => {
+    if (dynamicContent) {
+      return {
+        ...moduleData[moduleType] || moduleData.earthquake,
+        pages: convertDynamicContentToPages(dynamicContent, moduleType)
+      };
+    }
+    return moduleData[moduleType] || moduleData.earthquake;
+  };
+
+  const convertDynamicContentToPages = (content, hazardType) => {
+    const baseModule = moduleData[hazardType] || moduleData.earthquake;
+    return [
+      {
+        type: "cover",
+        content: {
+          title: `Learn About ${hazardType.charAt(0).toUpperCase() + hazardType.slice(1)}s`,
+          subtitle: "Stay safe, stay smart!",
+          icon: baseModule.icon,
+          description: content.introduction?.text || `Discover how ${hazardType}s happen and how to stay safe!`
+        }
+      },
+      {
+        type: "intro",
+        content: {
+          title: content.introduction?.title || `What is a ${hazardType}?`,
+          text: content.introduction?.text || `A ${hazardType} is a natural disaster that can be dangerous.`,
+          icon: content.introduction?.icon || baseModule.icon
+        }
+      },
+      {
+        type: "objectives",
+        content: {
+          title: "What You'll Learn",
+          objectives: content.objectives || baseModule.pages[2].content.objectives
+        }
+      },
+      ...(content.content || []).map((item, index) => ({
+        type: "content",
+        content: {
+          title: item.title,
+          text: item.text,
+          keyTerms: item.keyTerms || []
+        }
+      })),
+      {
+        type: "story",
+        content: {
+          title: content.story?.title || `The Great ${hazardType} of [Year]`,
+          text: content.story?.text || `A historical story about ${hazardType}s.`,
+          timeline: content.story?.timeline || []
+        }
+      },
+      {
+        type: "activity",
+        content: {
+          title: "What Would You Do?",
+          question: content.activity?.question || `You're in a situation when a ${hazardType} happens. What should you do?`,
+          options: content.activity?.options || ["Option A", "Option B", "Option C", "Option D"],
+          correct: content.activity?.correct || 1,
+          explanation: content.activity?.explanation || "The correct answer explanation."
+        }
+      },
+      {
+        type: "summary",
+        content: {
+          title: "Key Safety Tips",
+          tips: content.summary || baseModule.pages[6].content.tips
+        }
+      },
+      {
+        type: "certificate",
+        content: {
+          title: content.certificate?.title || "Congratulations!",
+          subtitle: content.certificate?.subtitle || `You are a ${hazardType} Safety Hero!`,
+          message: content.certificate?.message || `You've learned how to stay safe during ${hazardType}s.`
+        }
+      }
+    ];
+  };
+
+  const currentModule = getCurrentContent();
   const currentPageData = currentModule.pages[currentPage];
 
   const nextPage = () => {
@@ -474,6 +586,12 @@ const LearningModule = ({ isOpen, onClose, moduleType }) => {
             <div>
               <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">{currentModule.title}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">{currentModule.subtitle}</p>
+              {dynamicContent && (
+                <div className="flex items-center space-x-1 mt-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">AI-Generated Content</span>
+                </div>
+              )}
             </div>
           </div>
           <button
@@ -487,7 +605,50 @@ const LearningModule = ({ isOpen, onClose, moduleType }) => {
         {/* Content */}
         <div className="flex-1 overflow-hidden">
           <AnimatePresence mode="wait">
-            {!isBookOpen ? (
+            {isLoading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full flex flex-col items-center justify-center p-8"
+              >
+                <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Generating Content...
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 text-center">
+                  Our AI is creating personalized learning content for you!
+                </p>
+              </motion.div>
+            ) : error ? (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full flex flex-col items-center justify-center p-8 text-center"
+              >
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+                  <FiAlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Content Loading Error
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  {error}
+                </p>
+                <button
+                  onClick={fetchDynamicContent}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Try Again
+                </button>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  Using fallback content instead
+                </p>
+              </motion.div>
+            ) : !isBookOpen ? (
               <motion.div
                 key="cover"
                 initial={{ opacity: 0, y: 20 }}

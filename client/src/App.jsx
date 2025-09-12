@@ -20,6 +20,8 @@ import MapTestSuite from "./components/MapTestSuite";
 import MapTestComponent from "./components/MapTest";
 import SimpleAlertMap from "./components/SimpleAlertMap";
 import LearningModule from "./components/LearningModule";
+import DynamicContentTest from "./components/DynamicContentTest";
+import GoogleMapsTest from "./components/GoogleMapsTest";
 import ErrorBoundary from "./components/ErrorBoundary";
 import QuizList from "./pages/QuizList";
 import QuizPage from "./pages/QuizPage";
@@ -138,6 +140,8 @@ function App() {
                 <Route path="/learn/fire" element={<LearningModule isOpen={true} onClose={() => window.history.back()} moduleType="fire" />} />
                 <Route path="/learn/thunderstorm" element={<LearningModule isOpen={true} onClose={() => window.history.back()} moduleType="thunderstorm" />} />
                 <Route path="/learn/heatwave" element={<LearningModule isOpen={true} onClose={() => window.history.back()} moduleType="heatwave" />} />
+                <Route path="/test-dynamic-content" element={<DynamicContentTest />} />
+                <Route path="/test-google-maps" element={<GoogleMapsTest />} />
 
                 {/* Protected Routes */}
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

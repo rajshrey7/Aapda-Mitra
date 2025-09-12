@@ -69,7 +69,7 @@ const AlertMapModal = ({ alert, isOpen, onClose }) => {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places,geometry&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places,geometry,marker&loading=async`;
     script.async = true;
     script.defer = true;
     
@@ -103,6 +103,7 @@ const AlertMapModal = ({ alert, isOpen, onClose }) => {
           center: testCoords, // Use hardcoded coordinates first
           zoom: 14,
           mapTypeControl: true,
+          mapId: 'DEMO_MAP_ID', // Add Map ID for Advanced Markers
           streetViewControl: true,
           fullscreenControl: true,
           mapTypeId: 'roadmap'
@@ -113,25 +114,70 @@ const AlertMapModal = ({ alert, isOpen, onClose }) => {
           console.log('Map center after initialization:', mapInstance.getCenter()?.toJSON());
         }, 1000);
 
-      // Add alert marker
+      // Add alert marker using AdvancedMarkerElement
       console.log('Creating alert marker at position:', alertCoords);
       console.log('Using test coordinates for marker:', testCoords);
-      const alertMarker = new window.google.maps.Marker({
-        position: testCoords, // Use test coordinates for marker too
-        map: mapInstance,
-        title: alert?.title || 'Alert Location',
-        icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="20" cy="20" r="18" fill="#ef4444" stroke="#ffffff" stroke-width="3"/>
-              <path d="M20 8L24 16H16L20 8Z" fill="#ffffff"/>
-              <circle cx="20" cy="20" r="6" fill="#ffffff"/>
-            </svg>
-          `),
-          scaledSize: new window.google.maps.Size(40, 40),
-          anchor: new window.google.maps.Point(20, 20)
-        }
-      });
+      
+      const markerContent = document.createElement('div');
+      markerContent.innerHTML = `
+        <div style="
+          width: 40px; 
+          height: 40px; 
+          background: #ef4444; 
+          border: 3px solid #ffffff; 
+          border-radius: 50%; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          position: relative;
+        ">
+          <div style="
+            width: 0; 
+            height: 0; 
+            border-left: 8px solid transparent; 
+            border-right: 8px solid transparent; 
+            border-bottom: 12px solid #ffffff;
+            transform: translateY(-3px);
+          "></div>
+          <div style="
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #ffffff;
+            border-radius: 50%;
+          "></div>
+        </div>
+      `;
+
+      // Check if AdvancedMarkerElement is available, fallback to regular Marker
+      let alertMarker;
+      if (window.google?.maps?.marker?.AdvancedMarkerElement) {
+        alertMarker = new window.google.maps.marker.AdvancedMarkerElement({
+          position: testCoords, // Use test coordinates for marker too
+          map: mapInstance,
+          title: alert?.title || 'Alert Location',
+          content: markerContent
+        });
+      } else {
+        // Fallback to regular Marker with custom icon
+        alertMarker = new window.google.maps.Marker({
+          position: testCoords, // Use test coordinates for marker too
+          map: mapInstance,
+          title: alert?.title || 'Alert Location',
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="20" cy="20" r="18" fill="#ef4444" stroke="#ffffff" stroke-width="3"/>
+                <path d="M20 8L24 16H16L20 8Z" fill="#ffffff"/>
+                <circle cx="20" cy="20" r="6" fill="#ffffff"/>
+              </svg>
+            `),
+            scaledSize: new window.google.maps.Size(40, 40),
+            anchor: new window.google.maps.Point(20, 20)
+          }
+        });
+      }
       console.log('Alert marker created:', alertMarker);
 
       // Add info window

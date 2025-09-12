@@ -22,6 +22,7 @@ const alertsRoutes = require('./routes/alerts');
 const emergencyRoutes = require('./routes/emergency');
 const chatRoutes = require('./routes/chat');
 const drillsRoutes = require('./routes/drills');
+const learningModulesRoutes = require('./routes/learningModules');
 
 // Import services
 const { initialize: initializeSocketService } = require('./services/socketService');
@@ -112,6 +113,7 @@ app.use('/api/alerts', alertsRoutes);
 app.use('/api/emergency', emergencyRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/drills', drillsRoutes);
+app.use('/api/learning-modules', learningModulesRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
