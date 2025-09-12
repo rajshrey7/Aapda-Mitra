@@ -36,7 +36,7 @@ const Navbar = () => {
   const gameLinks = [
     { path: '/emergency-kit', label: 'Emergency Kit Builder' },
     { path: '/emergency-card-swap', label: 'Card Swap Game' },
-    { path: '/disaster-map', label: 'Disaster Map' },
+    // { path: '/disaster-map', label: 'Disaster Map' },
   ];
 
   if (user?.role === 'admin' || user?.role === 'teacher') {

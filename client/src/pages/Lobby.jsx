@@ -353,7 +353,7 @@ const Lobby = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             <LeaderboardRealtime />
-            <LiveAlerts />
+            {/* <LiveAlerts /> */}
           </div>
         </div>
 
