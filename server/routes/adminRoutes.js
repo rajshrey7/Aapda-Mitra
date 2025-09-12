@@ -230,7 +230,7 @@ router.get('/modules/completion-rates', async (req, res) => {
 
 // Schedule drill
 router.post('/drills/schedule', [
-  body('drillType').isIn(['earthquake', 'flood', 'fire', 'cyclone', 'evacuation', 'first-aid']).withMessage('Invalid drill type'),
+  body('drillType').isIn(['earthquake', 'flood', 'fire', 'cyclone', 'evacuation', 'first-aid', 'flood-evacuation']).withMessage('Invalid drill type'),
   body('scheduledDate').isISO8601().withMessage('Valid scheduled date required'),
   body('targetSchools').isArray().withMessage('Target schools must be an array'),
   body('description').trim().isLength({ min: 1, max: 500 }).withMessage('Description is required and must be less than 500 characters')

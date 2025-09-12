@@ -130,6 +130,26 @@ router.post('/manual', protect, admin, [
     }
 
     const { type, severity, title, description, location, coordinates, affectedAreas, instructions, targetRole } = req.body;
+    
+    // Ensure coordinates are properly formatted
+    let formattedCoordinates = null;
+    if (coordinates) {
+      formattedCoordinates = {
+        lat: parseFloat(coordinates.lat || coordinates.latitude || 0),
+        lng: parseFloat(coordinates.lng || coordinates.longitude || 0)
+      };
+    } else if (location) {
+      // If no coordinates provided, try to geocode the location
+      try {
+        const { getLocationCoordinates } = require('../services/alert.services');
+        const geocodedCoords = await getLocationCoordinates(location);
+        formattedCoordinates = geocodedCoords;
+        console.log(`Geocoded location "${location}" to coordinates:`, geocodedCoords);
+      } catch (geocodeError) {
+        console.error('Geocoding failed:', geocodeError);
+        // Will use null coordinates, which will be handled by the frontend
+      }
+    }
 
     const alert = {
       type,
@@ -137,7 +157,7 @@ router.post('/manual', protect, admin, [
       title,
       description,
       location,
-      coordinates,
+      coordinates: formattedCoordinates,
       affectedAreas: affectedAreas || [],
       instructions: instructions || [],
       targetRole: targetRole || 'student',

@@ -1,6 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiAlertTriangle, FiDroplet, FiZap, FiPlay, FiPause, FiRotateCcw, FiCheckCircle, FiClock, FiTarget } from 'react-icons/fi';
+import { FiAlertTriangle, FiDroplet, FiZap, FiPlay, FiPause, FiRotateCcw, FiCheckCircle, FiClock, FiTarget, FiActivity, FiTrendingUp, FiShield } from 'react-icons/fi';
+
+// Custom Earthquake Icon Component
+const EarthquakeIcon = ({ size = 24, className = "" }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M12 2L8 8L12 14L16 8L12 2Z"/>
+    <path d="M8 8L4 14L8 20L12 14L8 8Z"/>
+    <path d="M16 8L20 14L16 20L12 14L16 8Z"/>
+    <path d="M12 14L8 20L12 26L16 20L12 14Z"/>
+  </svg>
+);
 import axios from 'axios';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import api from '../config/api';
@@ -42,19 +62,19 @@ const DrillsPage = () => {
   const mockDrills = [
     {
       id: 1,
-      title: 'Earthquake Response Drill',
+      title: 'Earthquake Evacuation Drill',
       type: 'earthquake',
-      icon: FiZap,
+      icon: EarthquakeIcon,
       color: 'orange',
-      description: 'Practice Drop, Cover, and Hold On technique in a virtual classroom',
-      duration: 300, // 5 minutes in seconds
+      description: '🚨 EVACUATION DRILL - Practice earthquake safety and evacuation procedures',
+      duration: 180, // 3 minutes in seconds
       difficulty: 'Basic',
-      vrScene: '/assets/vr/earthquake-classroom.html',
+      vrScene: 'https://4874ed25.webapp-d9d.pages.dev/',
       checkpoints: [
-        { id: 1, title: 'Drop to the ground', description: 'Get down on your hands and knees', points: 50 },
-        { id: 2, title: 'Cover your head', description: 'Protect your head and neck with your arms', points: 50 },
-        { id: 3, title: 'Hold on', description: 'Hold on to your shelter until shaking stops', points: 50 },
-        { id: 4, title: 'Evacuate safely', description: 'Exit the building when safe to do so', points: 50 }
+        { id: 1, title: 'Start evacuation drill', description: 'Press Start Drill to begin the simulation', points: 25 },
+        { id: 2, title: 'Follow evacuation procedures', description: 'Complete the evacuation process safely', points: 50 },
+        { id: 3, title: 'Ensure everyone is safe', description: 'Verify all personnel have evacuated successfully', points: 50 },
+        { id: 4, title: 'Complete evacuation', description: 'Finish the drill within the time limit', points: 75 }
       ]
     },
     {
@@ -77,19 +97,19 @@ const DrillsPage = () => {
     },
     {
       id: 3,
-      title: 'Flood Response Drill',
-      type: 'flood',
+      title: 'Flood Evacuation Drill',
+      type: 'flood-evacuation',
       icon: FiDroplet,
-      color: 'blue',
-      description: 'Understand flood safety and response measures',
-      duration: 360, // 6 minutes in seconds
-      difficulty: 'Basic',
-      vrScene: '/assets/vr/flood-city.html',
+      color: 'cyan',
+      description: '🚨 EVACUATION DRILL - Guide everyone to the rooftop! Avoid rising water!',
+      duration: 120, // 2 minutes in seconds
+      difficulty: 'Advanced',
+      vrScene: 'https://project-dfa62c8e.pages.dev',
       checkpoints: [
-        { id: 1, title: 'Move to higher ground', description: 'Get to the highest floor possible', points: 60 },
-        { id: 2, title: 'Avoid floodwaters', description: 'Never walk or drive through floodwaters', points: 60 },
-        { id: 3, title: 'Turn off utilities', description: 'Turn off electricity and gas if safe', points: 60 },
-        { id: 4, title: 'Stay informed', description: 'Listen to emergency broadcasts', points: 60 }
+        { id: 1, title: 'Reach higher ground', description: 'Get to the rooftop or elevated area', points: 30 },
+        { id: 2, title: 'Collect emergency supplies', description: 'Gather first aid kit, rope, and radio', points: 45 },
+        { id: 3, title: 'Rescue people in danger', description: 'Help NPCs reach safety before water rises', points: 50 },
+        { id: 4, title: 'Evacuate all personnel', description: 'Ensure everyone reaches the rooftop safely', points: 75 }
       ]
     }
   ];
@@ -139,8 +159,52 @@ const DrillsPage = () => {
         });
     };
 
+    // Handle external drill completion
+    const handleExternalDrillComplete = (evt) => {
+      if (evt.data?.type === 'drill:complete' && selectedDrill?.type === 'flood-evacuation') {
+        // Simulate completion for external drill
+        const mockResult = {
+          score: Math.floor(Math.random() * 200) + 100, // Random score between 100-300
+          timeSpent: Math.floor(Math.random() * 60) + 60, // Random time between 60-120 seconds
+          performance: { accuracy: 80, speed: 75, safety: 85, teamwork: 70, decisionMaking: 80 }
+        };
+        
+        const sessionId = window.__DRILL_SESSION_ID__;
+        if (sessionId) {
+          const submit = {
+            drillType: selectedDrill.type,
+            score: mockResult.score,
+            timeTaken: mockResult.timeSpent,
+            totalTime: selectedDrill.duration,
+            performance: mockResult.performance,
+            completedSteps: [
+              { stepId: 'external-drill', stepName: 'Completed external flood evacuation drill', completed: true, timeSpent: mockResult.timeSpent, score: mockResult.score }
+            ],
+            missedSteps: [],
+            difficulty: 'medium',
+            metadata: { device: navigator.userAgent, platform: navigator.platform, external: true }
+          };
+
+          api.submitDrillResult(sessionId, submit)
+            .then((resp) => {
+              setFeedback(resp?.data?.feedback || resp?.data || { aiAnalysis: 'Great job completing the flood evacuation drill! You demonstrated good emergency response skills.' });
+              setShowFeedback(true);
+              fetchLeaderboard(selectedDrill.type);
+            })
+            .catch(() => {
+              setFeedback({ aiAnalysis: 'Great job completing the flood evacuation drill! You demonstrated good emergency response skills.' });
+              setShowFeedback(true);
+            });
+        }
+      }
+    };
+
     window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
+    window.addEventListener('message', handleExternalDrillComplete);
+    return () => {
+      window.removeEventListener('message', handler);
+      window.removeEventListener('message', handleExternalDrillComplete);
+    };
   }, [selectedDrill]);
 
   useEffect(() => {
@@ -236,7 +300,7 @@ const DrillsPage = () => {
             animate={{ y: 0, opacity: 1 }}
             className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
           >
-            🎮 Virtual Emergency Drills
+            🎮 3D Emergency Simulations
           </motion.h1>
           <motion.p 
             initial={{ y: 20, opacity: 0 }}
@@ -244,7 +308,7 @@ const DrillsPage = () => {
             transition={{ delay: 0.2 }}
             className="text-gray-600 dark:text-gray-300 text-lg"
           >
-            Practice emergency response through immersive VR simulations
+            Practice emergency response through immersive 3D simulations
           </motion.p>
         </div>
 
@@ -293,7 +357,7 @@ const DrillsPage = () => {
                     
                     <button className={`w-full py-3 bg-gradient-to-r from-${drill.color}-500 to-${drill.color}-600 text-white rounded-lg hover:from-${drill.color}-600 hover:to-${drill.color}-700 transition-all font-semibold flex items-center justify-center space-x-2`}>
                       <FiPlay className="w-5 h-5" />
-                      <span>Start VR Drill</span>
+                      <span>Start 3D Simulation</span>
                     </button>
                   </div>
                 </motion.div>
@@ -329,32 +393,76 @@ const DrillsPage = () => {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* VR Scene */}
+                {/* 3D Simulation */}
                 <div className="lg:col-span-2">
                   <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden">
                     <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-4">
                       <h3 className="text-lg font-semibold flex items-center">
                         <span className="mr-2">🥽</span>
-                        VR Simulation
+                        3D Simulation
                       </h3>
                     </div>
                     <div className="relative" style={{ height: '500px' }}>
-                      <iframe
-                        src={selectedDrill.vrScene}
-                        className="w-full h-full border-0"
-                        title={`VR Scene for ${selectedDrill.title}`}
-                        allow="vr; accelerometer; gyroscope; magnetometer"
-                      />
-                      {!isPlaying && !showIntro && (
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                          <button
-                            onClick={() => setIsPlaying(true)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg font-semibold flex items-center space-x-2 transition-colors"
-                          >
-                            <FiPlay className="w-6 h-6" />
-                            <span>Start Simulation</span>
-                          </button>
+                      {selectedDrill.vrScene.startsWith('http') ? (
+                        // External URL - show launch button
+                        <div className="w-full h-full bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+                          <div className="text-center p-8">
+                            <div className="text-6xl mb-4">🌊</div>
+                            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                              {selectedDrill.title}
+                            </h3>
+                            <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-md">
+                              {selectedDrill.description}
+                            </p>
+                            <div className="space-y-3 mb-6">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Duration:</span>
+                                <span className="font-semibold">{formatTime(selectedDrill.duration)}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Difficulty:</span>
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold bg-cyan-100 text-cyan-800`}>
+                                  {selectedDrill.difficulty}
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                window.open(selectedDrill.vrScene, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+                                setIsPlaying(true);
+                              }}
+                              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-4 rounded-lg font-semibold flex items-center space-x-2 transition-all transform hover:scale-105 mx-auto"
+                            >
+                              <FiPlay className="w-6 h-6" />
+                              <span>Launch External Drill</span>
+                            </button>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                              Opens in new window for full experience
+                            </p>
+                          </div>
                         </div>
+                      ) : (
+                        // Local 3D scene - use iframe
+                        <>
+                          <iframe
+                            src={selectedDrill.vrScene}
+                            className="w-full h-full border-0"
+                            title={`3D Simulation for ${selectedDrill.title}`}
+                            allow="vr; accelerometer; gyroscope; magnetometer; fullscreen"
+                            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                          />
+                          {!isPlaying && !showIntro && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                              <button
+                                onClick={() => setIsPlaying(true)}
+                                className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-lg font-semibold flex items-center space-x-2 transition-colors"
+                              >
+                                <FiPlay className="w-6 h-6" />
+                                <span>Start Simulation</span>
+                              </button>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -468,7 +576,7 @@ const DrillsPage = () => {
             transition={{ delay: 0.5 }}
             className="mt-16 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-8"
           >
-            <h2 className="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">Why Practice VR Drills?</h2>
+            <h2 className="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">Why Practice 3D Simulations?</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 { icon: '🧠', title: 'Build Muscle Memory', desc: 'Create automatic responses for emergency situations' },
@@ -517,9 +625,10 @@ const DrillsPage = () => {
               <ul className="list-decimal ml-5 space-y-2 text-gray-700 dark:text-gray-300">
                 {selectedDrill.type === 'earthquake' && (
                   <>
-                    <li>Drop to the ground. Find a desk and get under it.</li>
-                    <li>Cover your head and neck. Stay away from windows.</li>
-                    <li>Hold on until shaking stops. Then head to the exit.</li>
+                    <li>Press "Start Drill" to begin the evacuation simulation.</li>
+                    <li>Follow the evacuation procedures as they appear on screen.</li>
+                    <li>Ensure everyone reaches safety within the time limit.</li>
+                    <li>Complete the drill successfully to earn points.</li>
                   </>
                 )}
                 {selectedDrill.type === 'fire' && (
@@ -529,11 +638,12 @@ const DrillsPage = () => {
                     <li>Find the green EXIT door and evacuate.</li>
                   </>
                 )}
-                {selectedDrill.type === 'flood' && (
+                {selectedDrill.type === 'flood-evacuation' && (
                   <>
-                    <li>Move to higher ground (climb onto buildings).</li>
-                    <li>Pick up the green kit and yellow rope.</li>
-                    <li>Rescue NPCs by clicking them when water is high.</li>
+                    <li>Guide everyone to the rooftop! Avoid rising water!</li>
+                    <li>Use WASD to move, Mouse to look, SHIFT to run, SPACE to jump.</li>
+                    <li>Click to rescue NPCs when they're in danger.</li>
+                    <li>Watch the water level and get everyone to safety before time runs out.</li>
                   </>
                 )}
               </ul>

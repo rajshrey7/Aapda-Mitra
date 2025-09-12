@@ -57,7 +57,16 @@ const DisasterMap = () => {
       console.log('DisasterMap: Script already exists, waiting for load...');
       existingScript.onload = () => {
         console.log('DisasterMap: Existing script loaded');
-        setIsLoaded(true);
+        // Wait a bit more to ensure Google Maps is fully initialized
+        setTimeout(() => {
+          if (window.google && window.google.maps && window.google.maps.Map) {
+            console.log('DisasterMap: Google Maps API is ready (existing script)');
+            setIsLoaded(true);
+          } else {
+            console.error('DisasterMap: Google Maps API not ready after existing script load');
+            setError('Google Maps API failed to initialize properly');
+          }
+        }, 100);
       };
       existingScript.onerror = () => {
         console.error('DisasterMap: Existing script failed to load');
@@ -68,13 +77,22 @@ const DisasterMap = () => {
 
     console.log('DisasterMap: Loading Google Maps script...');
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places,geometry`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places,geometry&loading=async`;
     script.async = true;
     script.defer = true;
     
     script.onload = () => {
       console.log('DisasterMap: Script loaded successfully');
-      setIsLoaded(true);
+      // Wait a bit more to ensure Google Maps is fully initialized
+      setTimeout(() => {
+        if (window.google && window.google.maps && window.google.maps.Map) {
+          console.log('DisasterMap: Google Maps API is ready');
+          setIsLoaded(true);
+        } else {
+          console.error('DisasterMap: Google Maps API not ready after script load');
+          setError('Google Maps API failed to initialize properly');
+        }
+      }, 100);
     };
     
     script.onerror = (error) => {
@@ -95,6 +113,19 @@ const DisasterMap = () => {
 
   useEffect(() => {
     if (isLoaded && mapRef.current && !map) {
+      // Double-check that Google Maps is actually ready
+      if (!window.google || !window.google.maps || !window.google.maps.Map) {
+        console.log('DisasterMap: Google Maps not ready yet, retrying in 500ms...');
+        setTimeout(() => {
+          if (window.google && window.google.maps && window.google.maps.Map) {
+            console.log('DisasterMap: Google Maps is now ready, retrying map initialization');
+            // Trigger re-render by updating a state or calling the effect again
+            setIsLoaded(true);
+          }
+        }, 500);
+        return;
+      }
+      
       console.log('DisasterMap: Initializing map...');
       try {
         const mapInstance = new window.google.maps.Map(mapRef.current, {

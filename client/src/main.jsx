@@ -22,7 +22,12 @@ try {
   const root = ReactDOM.createRoot(document.getElementById("root"));
   root.render(
     React.createElement(React.StrictMode, null,
-      React.createElement(BrowserRouter, null,
+      React.createElement(BrowserRouter, { 
+        future: { 
+          v7_startTransition: true, 
+          v7_relativeSplatPath: true 
+        } 
+      },
         React.createElement(QueryClientProvider, { client: queryClient },
           React.createElement(App),
           React.createElement(Toaster, {

@@ -17,6 +17,8 @@ import DisasterMap from "./components/DisasterMap";
 import MapTest from "./components/MapTest";
 import SimpleMapTest from "./components/SimpleMapTest";
 import MapTestSuite from "./components/MapTestSuite";
+import MapTestComponent from "./components/MapTest";
+import SimpleAlertMap from "./components/SimpleAlertMap";
 import ErrorBoundary from "./components/ErrorBoundary";
 import QuizList from "./pages/QuizList";
 import QuizPage from "./pages/QuizPage";
@@ -93,6 +95,41 @@ function App() {
                 <Route path="/map-test" element={<MapTest />} />
                 <Route path="/simple-map" element={<SimpleMapTest />} />
                 <Route path="/map-tests" element={<MapTestSuite />} />
+                <Route path="/map-debug" element={<MapTestComponent />} />
+                <Route path="/simple-alert-map" element={
+                  <SimpleAlertMap 
+                    isOpen={true} 
+                    onClose={() => {}} 
+                    alert={{ 
+                      title: 'Earthquake Alert - Punjab Region', 
+                      description: 'Moderate earthquake detected in Punjab region',
+                      type: 'earthquake',
+                      severity: 'moderate',
+                      location: 'Punjab, India',
+                      coordinates: { lat: 31.1471, lng: 75.3412 }
+                    }}
+                  />
+                } />
+                <Route path="/test-map-loading" element={
+                  <div className="p-8">
+                    <h1 className="text-2xl font-bold mb-4">Google Maps API Test</h1>
+                    <div className="mb-4">
+                      <p>Google Maps Available: {window.google ? 'Yes' : 'No'}</p>
+                      <p>Google Maps Object: {window.google?.maps ? 'Yes' : 'No'}</p>
+                      <p>Google Maps Map Constructor: {window.google?.maps?.Map ? 'Yes' : 'No'}</p>
+                    </div>
+                    <SimpleAlertMap 
+                      isOpen={true} 
+                      onClose={() => {}} 
+                      alert={{ 
+                        title: 'API Test Alert', 
+                        description: 'Testing Google Maps API loading',
+                        location: 'Delhi, India',
+                        coordinates: { lat: 28.6139, lng: 77.2090 }
+                      }}
+                    />
+                  </div>
+                } />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/quizzes" element={<QuizList />} />
                 <Route path="/modules" element={<Modules />} />

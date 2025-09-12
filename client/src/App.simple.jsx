@@ -42,8 +42,8 @@ function App() {
           </div>
           
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-semibold mb-4">🎮 VR Drills</h3>
-            <p className="text-gray-600 mb-4">Practice emergency response in virtual reality</p>
+            <h3 className="text-xl font-semibold mb-4">🎮 3D Simulations</h3>
+            <p className="text-gray-600 mb-4">Practice emergency response in 3D simulations</p>
             <a href="/drills" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
               Start Drills
             </a>

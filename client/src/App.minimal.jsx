@@ -51,7 +51,7 @@ function App() {
                   Leaderboard
                 </a>
                 <a href="/drills" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                  VR Drills
+                  3D Simulations
                 </a>
                 <a href="/admin" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
                   Admin
@@ -75,8 +75,8 @@ function App() {
                       <p className="text-gray-600">View top performers and school rankings</p>
                     </a>
                     <a href="/drills" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-                      <h3 className="text-xl font-semibold mb-4">🎮 VR Drills</h3>
-                      <p className="text-gray-600">Practice emergency response in virtual reality</p>
+                      <h3 className="text-xl font-semibold mb-4">🎮 3D Simulations</h3>
+                      <p className="text-gray-600">Practice emergency response in 3D simulations</p>
                     </a>
                     <a href="/admin" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
                       <h3 className="text-xl font-semibold mb-4">📊 Admin Dashboard</h3>

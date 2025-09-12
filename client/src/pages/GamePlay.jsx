@@ -185,7 +185,7 @@ const GamePlay = () => {
   const renderVRScene = () => {
     if (gameSession?.gameType === 'vr-drill') {
       const vrScene = gameSession.gameType === 'vr-drill' 
-        ? '/assets/vr/earthquake-classroom.html'
+        ? 'https://4874ed25.webapp-d9d.pages.dev/'
         : '/assets/vr/fire-building.html';
 
       return (
@@ -193,7 +193,7 @@ const GamePlay = () => {
           ref={vrFrameRef}
           src={vrScene}
           className="w-full h-full border-0"
-          title="VR Drill Scene"
+          title="3D Simulation Scene"
         />
       );
     }
