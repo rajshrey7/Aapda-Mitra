@@ -21,10 +21,10 @@ const About = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-semibold mb-4">Smart India Hackathon 2024</h2>
+          <h2 className="text-2xl font-semibold mb-4">Smart India Hackathon 2025</h2>
           <p className="text-gray-700">
             This platform is developed as a solution for the Government of Punjab's problem statement 
-            in SIH 2024, addressing the critical need for structured disaster preparedness in educational institutions.
+            in SIH 2025, addressing the critical need for structured disaster preparedness in educational institutions.
           </p>
         </div>
 
