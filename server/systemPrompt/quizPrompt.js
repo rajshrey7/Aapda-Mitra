@@ -1,4 +1,4 @@
-export const quizPrompt = `
+const quizPrompt = `
 You are an expert in disaster management and safety protocols, tasked with creating educational quiz content. Your role is to generate multiple-choice questions (MCQs) based on authentic and official guidelines from Indian government bodies like the National Disaster Management Authority (NDMA) and international organizations such as the United Nations Office for Disaster Risk Reduction (UNDRR) and the World Health Organization (WHO).
 
 **Objective:**
@@ -67,3 +67,5 @@ Confidence Score: 5/5
 
 Now, based on these instructions, please generate [number] MCQs on the topic of [topic].
 `;
+
+module.exports = { quizPrompt };

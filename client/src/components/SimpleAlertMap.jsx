@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiMapPin, FiAlertTriangle, FiNavigation, FiShield, FiClock, FiMap, FiInfo, FiChevronDown, FiChevronRight } from 'react-icons/fi';
+import FallbackMap from './FallbackMap';
 
 const SimpleAlertMap = ({ isOpen, onClose, alert }) => {
   const mapRef = useRef(null);
@@ -16,6 +17,7 @@ const SimpleAlertMap = ({ isOpen, onClose, alert }) => {
     route: true,
     tips: false
   });
+  const [useFallback, setUseFallback] = useState(false);
 
   // Get alert coordinates or use default
   const getAlertCoordinates = () => {
@@ -230,7 +232,9 @@ const SimpleAlertMap = ({ isOpen, onClose, alert }) => {
     
     script.onerror = (error) => {
       console.error('SimpleAlertMap: Script loading error:', error);
-      setError('Failed to load Google Maps API. Please check your API key and internet connection.');
+      console.log('SimpleAlertMap: This might be due to ad blockers or browser extensions blocking Google Maps');
+      setUseFallback(true);
+      setError(null); // Clear error to show fallback
     };
 
     document.head.appendChild(script);
@@ -403,6 +407,63 @@ const SimpleAlertMap = ({ isOpen, onClose, alert }) => {
 
   if (!isOpen || !alert) return null;
 
+  // Show fallback map if Google Maps is blocked
+  if (useFallback) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
+                  <FiAlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                    Alert Location
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {alert.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <FiX className="w-6 h-6 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Fallback Map Content */}
+            <FallbackMap 
+              alert={alert}
+              userLocation={userLocation}
+              escapeRoute={escapeRoute}
+              expandedSections={expandedSections}
+              toggleSection={toggleSection}
+              showDirections={showDirections}
+              clearDirections={clearDirections}
+            />
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
   if (error) {
     return (
       <AnimatePresence>
@@ -428,6 +489,11 @@ const SimpleAlertMap = ({ isOpen, onClose, alert }) => {
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 {error}
               </p>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 mb-4">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <strong>Quick Fix:</strong> Disable ad blockers for this site or try refreshing the page.
+                </p>
+              </div>
               <button
                 onClick={onClose}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"

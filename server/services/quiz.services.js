@@ -1,12 +1,12 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { quizPrompt } from "../systemPrompt/quizPrompt.js";
-import dotenv from "dotenv";
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { quizPrompt } = require("../systemPrompt/quizPrompt.js");
+const dotenv = require("dotenv");
 dotenv.config();
 
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
-export async function generateQuiz(topic, numQuestions) {
+async function generateQuiz(topic, numQuestions) {
     if (!genAI) {
         console.log("Api key is not defined");
         return;
@@ -134,3 +134,5 @@ Ensure 4 options and correctAnswer present in options. Topic: ${topic}.
     // Finally, ensure we return exactly targetCount (trim if somehow exceeded)
     return collected.slice(0, targetCount);
 }
+
+module.exports = { generateQuiz };

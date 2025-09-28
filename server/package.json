@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Backend server for Aapda Mitra - Disaster Preparedness Platform",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"

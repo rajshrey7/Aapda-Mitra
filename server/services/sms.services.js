@@ -1,4 +1,4 @@
-import twilio from 'twilio';
+const twilio = require('twilio');
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -7,7 +7,7 @@ const myPhone = process.env.MY_PHONE_NUMBER;
 
 const client = twilio(accountSid, authToken);
 
-export async function sendSmsAlert(alertMessage) {
+async function sendSmsAlert(alertMessage) {
     if (!alertMessage || alertMessage.length === 0) {
         console.log("No alert message to send.");
         return;
@@ -26,3 +26,5 @@ export async function sendSmsAlert(alertMessage) {
         console.error("Failed to send SMS:", error);
     }
 }
+
+module.exports = { sendSmsAlert };

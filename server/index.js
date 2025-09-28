@@ -54,8 +54,8 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'", "https://aframe.io", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
-      imgSrc: ["'self'", "data:", "https:"],
+      scriptSrc: ["'self'", "https://aframe.io", "https://cdn.jsdelivr.net", "https://cdn.socket.io", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "https://maps.googleapis.com", "https://maps.gstatic.com"],
       connectSrc: [
         "'self'",
         "wss:",
@@ -65,7 +65,9 @@ app.use(helmet({
         "http://localhost:5174",
         "http://localhost:5175",
         "https://api.openweathermap.org",
-        "https://api.weatherapi.com"
+        "https://api.weatherapi.com",
+        "https://maps.googleapis.com",
+        "https://maps.gstatic.com"
       ],
       frameSrc: ["'self'", "https://aframe.io"]
     }
@@ -94,7 +96,8 @@ const connectDB = async () => {
     console.log('MongoDB Connected Successfully');
   } catch (error) {
     console.error('MongoDB Connection Error:', error);
-    process.exit(1);
+    console.log('⚠️  Running without database - some features may not work');
+    // Don't exit, just log the error and continue
   }
 };
 
